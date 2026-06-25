@@ -28,7 +28,7 @@ html,body{margin:0;height:100%;width:100%;max-width:100%;overflow-x:hidden}
 #boot{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;
   background:radial-gradient(700px 460px at 50% 0%, #1a2350, #0b1020)}
 #boot.hidden{display:none}
-.bootlogo{font-size:58px;animation:bootpulse 1.1s ease-in-out infinite;filter:drop-shadow(0 8px 22px rgba(99,102,241,.55))}
+.bootlogo{width:92px;height:92px;border-radius:21px;animation:bootpulse 1.1s ease-in-out infinite;filter:drop-shadow(0 12px 28px rgba(0,0,0,.55))}
 @keyframes bootpulse{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.12);opacity:1}}
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif;
@@ -48,7 +48,7 @@ input,select,textarea{font-family:inherit;font-size:16px}
   align-items:center;justify-content:center;padding:28px;gap:18px;
   background:radial-gradient(800px 500px at 50% 0%, #1a2350, var(--bg));
 }
-#login .logo{font-size:64px;filter:drop-shadow(0 8px 20px rgba(99,102,241,.5))}
+#login .logo{width:96px;height:96px;border-radius:22px;filter:drop-shadow(0 10px 24px rgba(0,0,0,.5))}
 #login h1{margin:0;font-size:24px;font-weight:800;letter-spacing:-.5px}
 #login p{margin:0;color:var(--muted);font-size:14px}
 .pwbox{display:flex;gap:10px;width:100%;max-width:340px;margin-top:8px}
@@ -310,11 +310,11 @@ textarea.input{resize:vertical;min-height:64px}
 <body>
 
 <!-- BOOT (pantalla de carga inicial, evita el parpadeo) -->
-<div id="boot"><div class="bootlogo">💳</div></div>
+<div id="boot"><img class="bootlogo" src="/icon.png" alt="" /></div>
 
 <!-- LOGIN -->
 <div id="login" class="hidden">
-  <div class="logo">💳</div>
+  <img class="logo" src="/icon.png" alt="" />
   <h1>Mis Suscripciones</h1>
   <p>Ingresa tu contraseña para continuar</p>
   <div class="pwbox">
