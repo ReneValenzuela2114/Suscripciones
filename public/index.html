@@ -348,27 +348,32 @@ let TOKEN = localStorage.getItem("sub_token") || "";
 let STATE = null;
 let TAB = "queue";
 let EDIT_ID = null;
-let FILTER = localStorage.getItem("sub_filter") || "all";
+// Filtro independiente por pestaña (queue / all), guardado entre sesiones
+let FILTERS = {};
+try{ FILTERS = JSON.parse(localStorage.getItem("sub_filters")||"{}"); }catch(e){ FILTERS={}; }
+function curFilter(){ return FILTERS[TAB] || "all"; }
+function setFilter(key){ FILTERS[TAB]=key; localStorage.setItem("sub_filters",JSON.stringify(FILTERS)); }
 function catById(id){ return (STATE.categories||[]).find(c=>c.id===id) || null; }
 function applyFilter(list){
-  if(FILTER==="all") return list;
-  if(FILTER==="none") return list.filter(s=>!s.category_id);
-  return list.filter(s=>String(s.category_id)===String(FILTER));
+  const F=curFilter();
+  if(F==="all") return list;
+  if(F==="none") return list.filter(s=>!s.category_id);
+  return list.filter(s=>String(s.category_id)===String(F));
 }
 function filterBar(){
+  const F=curFilter();
   const bar=h(`<div class="filterbar"></div>`);
   const mk=(key,label,color,active)=>{
-    const on=active?"on":"";
     const bg=active?(color?`background:${color}`:"background:linear-gradient(135deg,var(--brand),var(--brand2))"):"";
     const dot=color?`<span class="dot" style="background:${color}"></span>`:"";
-    const pill=h(`<button class="fpill ${on}" style="${bg}">${active?dot:dot}${label}</button>`);
-    pill.addEventListener("click",()=>{ FILTER=key; localStorage.setItem("sub_filter",key); go(TAB); });
+    const pill=h(`<button class="fpill ${active?'on':''}" style="${bg}">${dot}${label}</button>`);
+    pill.addEventListener("click",()=>{ setFilter(key); go(TAB); });
     return pill;
   };
-  bar.appendChild(mk("all","Todas",null,FILTER==="all"));
-  (STATE.categories||[]).forEach(c=>bar.appendChild(mk(String(c.id),c.name,c.color,String(FILTER)===String(c.id))));
+  bar.appendChild(mk("all","Todas",null,F==="all"));
+  (STATE.categories||[]).forEach(c=>bar.appendChild(mk(String(c.id),c.name,c.color,String(F)===String(c.id))));
   const hasNone=STATE.subscriptions.some(s=>!s.category_id);
-  if(hasNone) bar.appendChild(mk("none","Sin categoría",null,FILTER==="none"));
+  if(hasNone) bar.appendChild(mk("none","Sin categoría",null,F==="none"));
   return bar;
 }
 
@@ -397,10 +402,12 @@ function confirmBox(msgHTML, okLabel="Confirmar", emoji="❓", danger=false){
     const ov=h(`<div class="modal-ov"><div class="modal"><div class="modal-emoji">${emoji}</div><div class="modal-msg">${msgHTML}</div><div class="modal-btns"><button class="mbtn cancel">Cancelar</button><button class="mbtn ok ${danger?'danger':''}">${esc(okLabel)}</button></div></div></div>`);
     document.body.appendChild(ov);
     requestAnimationFrame(()=>ov.classList.add("show"));
+    const t0=Date.now();
+    const armed=()=>Date.now()-t0>400; // evita el "toque fantasma" del botón que lo abrió
     const close=(v)=>{ ov.classList.remove("show"); setTimeout(()=>ov.remove(),180); resolve(v); };
-    $(".cancel",ov).onclick=()=>close(false);
-    $(".ok",ov).onclick=()=>close(true);
-    ov.addEventListener("click",(e)=>{ if(e.target===ov) close(false); });
+    $(".cancel",ov).onclick=()=>{ if(armed()) close(false); };
+    $(".ok",ov).onclick=()=>{ if(armed()) close(true); };
+    ov.addEventListener("click",(e)=>{ if(e.target===ov && armed()) close(false); });
   });
 }
 
@@ -536,7 +543,7 @@ function viewQueue(){
   const list=h(`<div class="list" id="queueList"></div>`);
   shown.forEach(s=>list.appendChild(subCard(s)));
   p.appendChild(list);
-  if(FILTER==="all") enableDrag(list);
+  if(curFilter()==="all") enableDrag(list);
   return p;
 }
 
