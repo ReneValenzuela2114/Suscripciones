@@ -353,10 +353,10 @@ async function handleApi(request, env, path) {
 }
 
 /* --------------------------- recordatorios (cron) -------------------------- */
-async function sendSMS(env, to, body) {
-  if (!env.TWILIO_SID || !env.TWILIO_TOKEN || !env.TWILIO_FROM || !to) return false;
+async function twilioSend(env, To, From, body) {
+  if (!env.TWILIO_SID || !env.TWILIO_TOKEN || !From || !To) return false;
   const url = `https://api.twilio.com/2010-04-01/Accounts/${env.TWILIO_SID}/Messages.json`;
-  const form = new URLSearchParams({ To: to, From: env.TWILIO_FROM, Body: body });
+  const form = new URLSearchParams({ To, From, Body: body });
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -366,6 +366,14 @@ async function sendSMS(env, to, body) {
     body: form,
   });
   return res.ok;
+}
+async function sendSMS(env, to, body) {
+  return twilioSend(env, to, env.TWILIO_FROM, body);
+}
+async function sendWhatsApp(env, to, body) {
+  // Número del sandbox de WhatsApp por defecto si no se configura otro
+  const from = env.TWILIO_WHATSAPP_FROM || "whatsapp:+14155238886";
+  return twilioSend(env, `whatsapp:${to}`, from, body);
 }
 
 async function runReminders(env) {
@@ -388,12 +396,13 @@ async function runReminders(env) {
   }
   if (!due.length) return;
 
-  if (channel === "sms" && phone) {
+  if ((channel === "sms" || channel === "whatsapp") && phone) {
     for (const s of due) {
       const d = daysBetween(today, s.next_due_date);
       const cuando = d < 0 ? `VENCIDO hace ${-d} día(s)` : d === 0 ? "vence HOY" : `vence en ${d} día(s)`;
-      const body = `Recordatorio de pago: ${s.name} ${cuando} (${s.currency} ${s.amount}). Fecha: ${s.next_due_date}.`;
-      await sendSMS(env, phone, body);
+      const body = `🔔 Recordatorio de pago: ${s.name} ${cuando} (${s.currency} ${s.amount}). Fecha: ${s.next_due_date}.`;
+      if (channel === "whatsapp") await sendWhatsApp(env, phone, body);
+      else await sendSMS(env, phone, body);
     }
   }
   // Marcar como avisado (también si el canal es 'app', para no recontar)
