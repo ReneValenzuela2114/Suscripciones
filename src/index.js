@@ -277,6 +277,7 @@ async function handleApi(request, env, path) {
     // Pagos iniciales para tipo manual
     if (b.billing_type === "manual" && Array.isArray(b.payments)) {
       for (const p of b.payments) {
+        if (!p.due_date) continue;
         await env.DB.prepare(
           "INSERT INTO payments (subscription_id, due_date, amount, currency) VALUES (?,?,?,?)"
         ).bind(id, p.due_date, p.amount ?? b.amount ?? 0, p.currency || b.currency || "GTQ").run();
@@ -365,6 +366,21 @@ async function handleApi(request, env, path) {
       }
     }
     return json({ ok: true, undone });
+  }
+
+  // Reemplazar los pagos NO pagados (sincroniza exacto lo del formulario)
+  if ((m = path.match(/^\/api\/subscriptions\/(\d+)\/payments\/replace$/)) && method === "POST") {
+    const id = Number(m[1]);
+    const b = await request.json();
+    await env.DB.prepare("DELETE FROM payments WHERE subscription_id=? AND paid=0").bind(id).run();
+    for (const p of (b.payments || [])) {
+      if (!p.due_date) continue;
+      await env.DB.prepare(
+        "INSERT INTO payments (subscription_id, due_date, amount, currency) VALUES (?,?,?,?)"
+      ).bind(id, p.due_date, p.amount || 0, p.currency || "GTQ").run();
+    }
+    await recomputeManualDue(env, id);
+    return json({ ok: true });
   }
 
   // Agregar pago manual a una suscripción

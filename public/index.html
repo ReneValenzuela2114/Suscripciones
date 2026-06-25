@@ -98,7 +98,7 @@ input,select,textarea{font-family:inherit;font-size:16px}
 /* subscription card */
 .list{display:flex;flex-direction:column;gap:11px}
 .subcard{
-  display:flex;align-items:center;gap:13px;background:var(--card);border:1px solid var(--line);
+  display:flex;align-items:center;flex-wrap:wrap;gap:13px;background:var(--card);border:1px solid var(--line);
   border-radius:18px;padding:13px 14px;position:relative;transition:transform .12s, box-shadow .2s;
   touch-action:pan-y
 }
@@ -125,7 +125,7 @@ input,select,textarea{font-family:inherit;font-size:16px}
 .paybtn.holding{transform:scale(.85);transition:transform .65s ease;box-shadow:0 0 0 3px rgba(251,113,133,.4)}
 
 /* expand details */
-.details{margin-top:11px;padding-top:12px;border-top:1px dashed var(--line);display:none;flex-direction:column;gap:9px}
+.details{width:100%;margin-top:4px;padding-top:12px;border-top:1px dashed var(--line);display:none;flex-direction:column;gap:9px}
 .subcard.open .details{display:flex}
 .detrow{display:flex;justify-content:space-between;align-items:center;font-size:13px}
 .detrow .lab{color:var(--muted)}
@@ -217,6 +217,20 @@ textarea.input{resize:vertical;min-height:64px}
   font-size:14px;font-weight:600;box-shadow:var(--shadow);opacity:0;pointer-events:none;
   transition:opacity .25s, transform .25s;z-index:60;max-width:90%}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* modal de confirmación */
+.modal-ov{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;padding:30px;background:rgba(5,8,20,.62);backdrop-filter:blur(3px);opacity:0;transition:opacity .18s}
+.modal-ov.show{opacity:1}
+.modal{background:var(--card2);border:1px solid var(--line);border-radius:20px;padding:22px 20px 18px;max-width:300px;width:100%;box-shadow:var(--shadow);transform:scale(.94);transition:transform .18s}
+.modal-ov.show .modal{transform:scale(1)}
+.modal-emoji{font-size:34px;text-align:center;margin-bottom:8px}
+.modal-msg{font-size:14.5px;font-weight:600;text-align:center;line-height:1.45;margin-bottom:18px}
+.modal-msg b{font-weight:800}
+.modal-btns{display:flex;gap:10px}
+.mbtn{flex:1;padding:13px;border-radius:13px;font-weight:700;font-size:14px;background:var(--bg2);border:1px solid var(--line);color:var(--txt)}
+.mbtn:active{transform:scale(.97)}
+.mbtn.ok{background:linear-gradient(135deg,var(--green),#10b981);border-color:transparent;color:#04231a}
+.mbtn.ok.danger{background:linear-gradient(135deg,#f43f5e,#fb7185);color:#fff}
 
 /* acordeón (secciones plegables) */
 .acc{border:1px solid var(--line);border-radius:14px;margin-bottom:11px;background:var(--bg2);overflow:hidden}
@@ -365,6 +379,17 @@ function $(s,el=document){return el.querySelector(s)}
 function h(html){const t=document.createElement("template");t.innerHTML=html.trim();return t.content.firstElementChild}
 function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2200)}
 function toastAction(m,label,fn,ms=6000){const t=$("#toast");t.innerHTML=`<span>${esc(m)}</span><button id="toastBtn" style="margin-left:14px;color:var(--accent);font-weight:800;background:none">${esc(label)}</button>`;t.classList.add("show");clearTimeout(t._t);$("#toastBtn").onclick=()=>{t.classList.remove("show");clearTimeout(t._t);fn();};t._t=setTimeout(()=>t.classList.remove("show"),ms);}
+function confirmBox(msgHTML, okLabel="Confirmar", emoji="❓", danger=false){
+  return new Promise(resolve=>{
+    const ov=h(`<div class="modal-ov"><div class="modal"><div class="modal-emoji">${emoji}</div><div class="modal-msg">${msgHTML}</div><div class="modal-btns"><button class="mbtn cancel">Cancelar</button><button class="mbtn ok ${danger?'danger':''}">${esc(okLabel)}</button></div></div></div>`);
+    document.body.appendChild(ov);
+    requestAnimationFrame(()=>ov.classList.add("show"));
+    const close=(v)=>{ ov.classList.remove("show"); setTimeout(()=>ov.remove(),180); resolve(v); };
+    $(".cancel",ov).onclick=()=>close(false);
+    $(".ok",ov).onclick=()=>close(true);
+    ov.addEventListener("click",(e)=>{ if(e.target===ov) close(false); });
+  });
+}
 
 async function api(path, opt={}){
   const o={headers:{}, ...opt};
@@ -530,7 +555,7 @@ function subCard(s){
     pb.classList.add("holding");
     holdT=setTimeout(()=>{ held=true; pb.classList.remove("holding"); navigator.vibrate&&navigator.vibrate(25); confirmUndo(s); },650);
   };
-  const endHold=(doTap)=>{ clearTimeout(holdT); pb.classList.remove("holding"); if(doTap && !held) markPaid(s.id); };
+  const endHold=(doTap)=>{ clearTimeout(holdT); pb.classList.remove("holding"); if(doTap && !held) markPaid(s); };
   pb.addEventListener("touchstart",(e)=>e.stopPropagation(),{passive:true});
   pb.addEventListener("mousedown",(e)=>e.stopPropagation());
   pb.addEventListener("pointerdown",(e)=>{ e.stopPropagation(); startHold(e); });
@@ -541,7 +566,7 @@ function subCard(s){
 }
 
 async function confirmUndo(s){
-  if(!confirm(`¿Deshacer el último pago de "${s.name}"?\n\nVolverá a la fecha del pago anterior. Puedes mantener presionado de nuevo para retroceder más pagos.`)) return;
+  if(!(await confirmBox(`¿Deshacer el último pago de <b>${esc(s.name)}</b>?`,"Deshacer","↩️",true))) return;
   try{
     const r=await api(`/api/subscriptions/${s.id}/undo-pay`,{method:"POST"});
     await reload();
@@ -588,11 +613,12 @@ function payItem(p){
   return it;
 }
 
-async function markPaid(id){
+async function markPaid(s){
+  if(!(await confirmBox(`¿Registrar el pago de <b>${esc(s.name)}</b>?`,"Sí, pagué","💸"))) return;
   try{
-    await api(`/api/subscriptions/${id}/pay`,{method:"POST"});
+    await api(`/api/subscriptions/${s.id}/pay`,{method:"POST"});
     await reload();
-    toast("✓ Pago registrado · mantén presionado Pagué para deshacer");
+    toast("✓ Pago registrado");
   }catch(e){ toast(e.message); }
 }
 async function addManualPayment(s){
@@ -891,9 +917,9 @@ async function submitForm(){
   try{
     if(EDIT_ID){
       await api(`/api/subscriptions/${EDIT_ID}`,{method:"PUT",body});
-      // sincronizar pagos manuales nuevos
+      // sincroniza exacto los pagos manuales (sin perder ni duplicar el último)
       if(f.billing_type==="manual"){
-        for(const p of f.payments){ if(!p.id) await api(`/api/subscriptions/${EDIT_ID}/payments`,{method:"POST",body:{due_date:p.due_date,amount:p.amount,currency:f.currency}}); }
+        await api(`/api/subscriptions/${EDIT_ID}/payments/replace`,{method:"POST",body:{payments:f.payments.map(p=>({due_date:p.due_date,amount:p.amount,currency:f.currency}))}});
       }
       toast("Cambios guardados");
     }else{
