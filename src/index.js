@@ -93,6 +93,9 @@ async function recomputeManualDue(env, subId) {
 
 async function getFullState(env) {
   const settings = await readSettings(env);
+  const { results: cats } = await env.DB.prepare(
+    "SELECT * FROM categories ORDER BY sort_order ASC, id ASC"
+  ).all();
   const { results: subs } = await env.DB.prepare(
     "SELECT * FROM subscriptions ORDER BY active DESC, manual_sort DESC, " +
     "CASE WHEN next_due_date IS NULL THEN 1 ELSE 0 END, next_due_date ASC, sort_order ASC, id ASC"
@@ -167,12 +170,13 @@ async function getFullState(env) {
     active_count: subs.filter((s) => s.active).length,
   };
 
-  return { settings, subscriptions: subs, summary, today };
+  return { settings, categories: cats, subscriptions: subs, summary, today };
 }
 
 /* --------------------------------- API ------------------------------------ */
 async function handleApi(request, env, path) {
   const method = request.method;
+  let m;
 
   // Login no requiere token
   if (path === "/api/login" && method === "POST") {
@@ -219,6 +223,34 @@ async function handleApi(request, env, path) {
     return json({ ok: false, error: r.error || "No se pudo enviar." }, 400);
   }
 
+  // Categorías
+  if (path === "/api/categories" && method === "POST") {
+    const b = await request.json();
+    if (!b.name || !b.name.trim()) return json({ error: "Falta el nombre" }, 400);
+    const max = await env.DB.prepare("SELECT COALESCE(MAX(sort_order),-1)+1 AS n FROM categories").first();
+    const res = await env.DB.prepare(
+      "INSERT INTO categories (name, color, sort_order) VALUES (?,?,?)"
+    ).bind(b.name.trim(), b.color || "#6366f1", max.n).run();
+    return json({ id: res.meta.last_row_id });
+  }
+  if ((m = path.match(/^\/api\/categories\/(\d+)$/))) {
+    const id = Number(m[1]);
+    if (method === "PUT") {
+      const b = await request.json();
+      const sets = [], vals = [];
+      if ("name" in b) { sets.push("name=?"); vals.push(b.name); }
+      if ("color" in b) { sets.push("color=?"); vals.push(b.color); }
+      if ("sort_order" in b) { sets.push("sort_order=?"); vals.push(b.sort_order); }
+      if (sets.length) { vals.push(id); await env.DB.prepare(`UPDATE categories SET ${sets.join(",")} WHERE id=?`).bind(...vals).run(); }
+      return json({ ok: true });
+    }
+    if (method === "DELETE") {
+      await env.DB.prepare("UPDATE subscriptions SET category_id=NULL WHERE category_id=?").bind(id).run();
+      await env.DB.prepare("DELETE FROM categories WHERE id=?").bind(id).run();
+      return json({ ok: true });
+    }
+  }
+
   // Crear suscripción
   if (path === "/api/subscriptions" && method === "POST") {
     const b = await request.json();
@@ -228,15 +260,15 @@ async function handleApi(request, env, path) {
     }
     const res = await env.DB.prepare(
       `INSERT INTO subscriptions
-       (name, icon_type, icon_value, color, amount, currency, billing_type,
-        interval_unit, interval_count, anchor_date, next_due_date, reminder_days, notes)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`
+       (name, category_id, icon_type, icon_value, color, amount, currency, billing_type,
+        interval_unit, interval_count, anchor_date, next_due_date, reminder_days, notify, notes)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
     ).bind(
-      b.name, b.icon_type || "emoji", b.icon_value || "💳", b.color || "#6366f1",
+      b.name, b.category_id ?? null, b.icon_type || "emoji", b.icon_value || "💳", b.color || "#6366f1",
       b.amount || 0, b.currency || "GTQ", b.billing_type || "recurring",
       b.interval_unit || "month", b.interval_count || 1, b.anchor_date || null,
       b.billing_type === "manual" ? null : nextDue,
-      b.reminder_days ?? null, b.notes || null
+      b.reminder_days ?? null, b.notify === 0 ? 0 : 1, b.notes || null
     ).run();
     const id = res.meta.last_row_id;
     // Pagos iniciales para tipo manual
@@ -252,14 +284,13 @@ async function handleApi(request, env, path) {
   }
 
   // Rutas con id: /api/subscriptions/:id ...
-  let m;
   if ((m = path.match(/^\/api\/subscriptions\/(\d+)$/))) {
     const id = Number(m[1]);
     if (method === "PUT") {
       const b = await request.json();
-      const fields = ["name","icon_type","icon_value","color","amount","currency",
+      const fields = ["name","category_id","icon_type","icon_value","color","amount","currency",
         "billing_type","interval_unit","interval_count","anchor_date","next_due_date",
-        "reminder_days","notes","active"];
+        "reminder_days","notify","notes","active"];
       const sets = [], vals = [];
       for (const f of fields) if (f in b) { sets.push(`${f}=?`); vals.push(b[f]); }
       if (sets.length) {
@@ -405,6 +436,7 @@ async function runReminders(env) {
 
   const due = [];
   for (const s of subs) {
+    if (s.notify === 0) continue; // aviso desactivado para esta suscripción
     const rd = s.reminder_days ?? defDays;
     const d = daysBetween(today, s.next_due_date);
     if (d <= rd && s.last_reminded !== s.next_due_date) {

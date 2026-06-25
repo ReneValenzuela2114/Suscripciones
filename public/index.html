@@ -216,6 +216,31 @@ textarea.input{resize:vertical;min-height:64px}
   transition:opacity .25s, transform .25s;z-index:60;max-width:90%}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+/* filtros por categoría */
+.filterbar{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 12px;margin:0 -2px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.filterbar::-webkit-scrollbar{display:none}
+.fpill{flex-shrink:0;display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:13px;font-weight:700;color:var(--muted);white-space:nowrap;transition:transform .1s}
+.fpill:active{transform:scale(.96)}
+.fpill .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.fpill.on{color:#fff;border-color:transparent;box-shadow:0 6px 16px rgba(0,0,0,.3)}
+
+/* switch */
+.switchrow{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg2);border:1px solid var(--line);border-radius:13px;padding:13px 14px;margin-bottom:14px}
+.switchrow .lbl2{font-size:13.5px;font-weight:600}
+.switchrow .hint{font-size:11.5px;color:var(--muted);margin-top:2px}
+.switch{width:48px;height:28px;border-radius:999px;background:var(--muted2);position:relative;transition:background .2s;flex-shrink:0;cursor:pointer}
+.switch.on{background:var(--green)}
+.switch .knob{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.switch.on .knob{transform:translateX(20px)}
+
+/* chips de categoría en formulario */
+.catchips{display:flex;gap:8px;flex-wrap:wrap}
+.catchip{display:flex;align-items:center;gap:7px;padding:9px 13px;border-radius:11px;background:var(--bg2);border:1px solid var(--line);font-size:13px;font-weight:700;color:var(--muted)}
+.catchip.on{color:#fff}
+.catchip .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.catrow{display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:8px}
+.catrow .left{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600}
+
 .page{animation:fade .25s ease}
 @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
@@ -283,6 +308,29 @@ let TOKEN = localStorage.getItem("sub_token") || "";
 let STATE = null;
 let TAB = "queue";
 let EDIT_ID = null;
+let FILTER = localStorage.getItem("sub_filter") || "all";
+function catById(id){ return (STATE.categories||[]).find(c=>c.id===id) || null; }
+function applyFilter(list){
+  if(FILTER==="all") return list;
+  if(FILTER==="none") return list.filter(s=>!s.category_id);
+  return list.filter(s=>String(s.category_id)===String(FILTER));
+}
+function filterBar(){
+  const bar=h(`<div class="filterbar"></div>`);
+  const mk=(key,label,color,active)=>{
+    const on=active?"on":"";
+    const bg=active?(color?`background:${color}`:"background:linear-gradient(135deg,var(--brand),var(--brand2))"):"";
+    const dot=color?`<span class="dot" style="background:${color}"></span>`:"";
+    const pill=h(`<button class="fpill ${on}" style="${bg}">${active?dot:dot}${label}</button>`);
+    pill.addEventListener("click",()=>{ FILTER=key; localStorage.setItem("sub_filter",key); go(TAB); });
+    return pill;
+  };
+  bar.appendChild(mk("all","Todas",null,FILTER==="all"));
+  (STATE.categories||[]).forEach(c=>bar.appendChild(mk(String(c.id),c.name,c.color,String(FILTER)===String(c.id))));
+  const hasNone=STATE.subscriptions.some(s=>!s.category_id);
+  if(hasNone) bar.appendChild(mk("none","Sin categoría",null,FILTER==="none"));
+  return bar;
+}
 
 const EMOJIS = ["💳","📺","🎬","🎵","🎮","☁️","📱","🛡️","🚗","🏠","💡","💧","📶","🔥","🍿","📚","🧠","🤖","💪","🎧","🛒","✈️","🐱","📰","🩺","💼","🌐","⚡","🎨","🔑","📡","🏦"];
 const COLORS = ["#6366f1","#8b5cf6","#ec4899","#f43f5e","#f59e0b","#10b981","#06b6d4","#3b82f6","#84cc16","#a855f7","#ef4444","#14b8a6","#ffffff","transparent"];
@@ -415,29 +463,41 @@ function viewQueue(){
     <div class="stat"><div class="k">Activas</div><div class="v">${sum.active_count}</div></div>
   </div>`));
 
+  if(!subs.length){
+    p.appendChild(h(`<div class="empty-state"><div class="e">🗒️</div><p>Aún no tienes suscripciones.<br>Toca el botón ＋ para agregar una.</p></div>`));
+    return p;
+  }
+
+  // filtros por categoría
+  if((STATE.categories||[]).length) p.appendChild(filterBar());
+
   // section header + order toggle
   const manual=subs.some(s=>s.manual_sort);
   p.appendChild(h(`<div class="sectionhdr"><div class="t">Cola de pagos</div>
     <button class="toggleorder" onclick="${manual?'autoOrder()':''}">${manual?'↺ Orden automático':'↕ Arrastra para reordenar'}</button></div>`));
 
-  if(!subs.length){
-    p.appendChild(h(`<div class="empty-state"><div class="e">🗒️</div><p>Aún no tienes suscripciones.<br>Toca el botón ＋ para agregar una.</p></div>`));
+  const shown=applyFilter(subs);
+  if(!shown.length){
+    p.appendChild(h(`<div class="empty-state"><div class="e">🔍</div><p>No hay pagos en este filtro.</p></div>`));
     return p;
   }
   const list=h(`<div class="list" id="queueList"></div>`);
-  subs.forEach(s=>list.appendChild(subCard(s)));
+  shown.forEach(s=>list.appendChild(subCard(s)));
   p.appendChild(list);
-  enableDrag(list);
+  if(FILTER==="all") enableDrag(list);
   return p;
 }
 
 function subCard(s){
   const dl=dueLabel(s.days_until);
+  const cat=catById(s.category_id);
+  const catPill=cat?`<span class="pill" style="background:${cat.color}22;color:${cat.color}">${esc(cat.name)}</span>`:"";
+  const mute=s.notify===0?`<span title="Aviso desactivado">🔕</span>`:"";
   const card=h(`<div class="subcard" data-id="${s.id}">
     ${avatarHtml(s)}
     <div class="subinfo">
-      <div class="nm">${esc(s.name)}</div>
-      <div class="meta"><span class="pill ${dl.cls}">${dl.txt}</span><span>${fmtDate(s.next_due_date)}</span><span>· ${cycleText(s)}</span></div>
+      <div class="nm">${esc(s.name)} ${mute}</div>
+      <div class="meta"><span class="pill ${dl.cls}">${dl.txt}</span>${catPill}<span>· ${cycleText(s)}</span></div>
     </div>
     <div class="subright">
       <div class="amt">${money(s.amount,s.currency)}</div>
@@ -512,8 +572,11 @@ function viewAll(){
   const p=h(`<div class="page"></div>`);
   const subs=STATE.subscriptions;
   if(!subs.length){ p.appendChild(h(`<div class="empty-state"><div class="e">🗂️</div><p>Sin suscripciones todavía.</p></div>`)); return p; }
+  if((STATE.categories||[]).length) p.appendChild(filterBar());
+  const shown=applyFilter(subs);
+  if(!shown.length){ p.appendChild(h(`<div class="empty-state"><div class="e">🔍</div><p>No hay nada en este filtro.</p></div>`)); return p; }
   const list=h(`<div class="list"></div>`);
-  subs.forEach(s=>{
+  shown.forEach(s=>{
     const c=subCard(s);
     if(!s.active){ c.style.opacity=".5"; }
     list.appendChild(c);
@@ -559,14 +622,14 @@ function viewSummary(){
 /* ============================== vista: formulario ============================== */
 let FORM = null;
 function blankForm(){
-  return {name:"",icon_type:"emoji",icon_value:"💳",color:"#6366f1",amount:"",currency:dispCur(),
+  return {name:"",category_id:null,icon_type:"emoji",icon_value:"💳",color:"#6366f1",amount:"",currency:dispCur(),
     billing_type:"recurring",interval_unit:"month",interval_count:1,anchor_date:STATE.today,
-    next_due_date:STATE.today,reminder_days:"",notes:"",payments:[]};
+    next_due_date:STATE.today,reminder_days:"",notify:1,notes:"",payments:[]};
 }
 function editSub(id){
   const s=STATE.subscriptions.find(x=>x.id===id);
   EDIT_ID=id;
-  FORM={...s, amount:s.amount, reminder_days:s.reminder_days??"", payments:(s.payments||[]).filter(p=>!p.paid).map(p=>({due_date:p.due_date,amount:p.amount,id:p.id}))};
+  FORM={...s, amount:s.amount, reminder_days:s.reminder_days??"", notify:s.notify===0?0:1, payments:(s.payments||[]).filter(p=>!p.paid).map(p=>({due_date:p.due_date,amount:p.amount,id:p.id}))};
   TAB="add"; document.querySelectorAll(".nav button[data-tab]").forEach(b=>b.classList.remove("on"));
   $("#pageTitle").textContent="Editar suscripción"; $("#pageSub").textContent=s.name;
   window.scrollTo(0,0); const c=$("#content"); c.innerHTML=""; c.appendChild(viewForm());
@@ -596,6 +659,29 @@ function viewForm(){
     const i=h(`<input class="input" placeholder="Netflix, Seguro de carro..." value="${esc(f.name)}">`);
     i.addEventListener("input",()=>{f.name=i.value;refreshPreview();}); return i;
   }));
+
+  // categoría
+  card.appendChild(label("Categoría"));
+  const catWrap=h(`<div class="catchips" style="margin-bottom:14px"></div>`);
+  const renderCats=()=>{
+    catWrap.innerHTML="";
+    (STATE.categories||[]).forEach(c=>{
+      const on=String(f.category_id)===String(c.id);
+      const chip=h(`<button type="button" class="catchip ${on?'on':''}" style="${on?`background:${c.color};border-color:transparent`:''}"><span class="dot" style="background:${c.color}"></span>${esc(c.name)}</button>`);
+      chip.addEventListener("click",()=>{ f.category_id = on?null:c.id; renderCats(); });
+      catWrap.appendChild(chip);
+    });
+    const add=h(`<button type="button" class="catchip" style="color:var(--accent)">＋ Nueva</button>`);
+    add.addEventListener("click",async()=>{
+      const name=prompt("Nombre de la nueva categoría:");
+      if(!name||!name.trim()) return;
+      try{ const r=await api("/api/categories",{method:"POST",body:{name:name.trim(),color:COLORS[Math.floor(Math.random()*12)]}}); await load(); f.category_id=r.id; renderCats(); toast("Categoría creada"); }
+      catch(e){ toast(e.message); }
+    });
+    catWrap.appendChild(add);
+  };
+  renderCats();
+  card.appendChild(catWrap);
 
   // icono: tipo
   const iconSeg=h(`<div class="seg" style="margin-bottom:11px">
@@ -718,10 +804,22 @@ function viewForm(){
   typeSeg.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{f.billing_type=b.dataset.v;renderDyn();refreshPreview();}));
   card.appendChild(typeSeg); card.appendChild(dyn); renderDyn();
 
-  // aviso override + notas
-  card.appendChild(field("Avisarme (días antes) — opcional","",()=>{
-    const i=h(`<input class="input" type="number" min="0" placeholder="Usar global (${S().reminder_days})" value="${f.reminder_days}">`);
-    i.addEventListener("input",()=>f.reminder_days=i.value);return i;}));
+  // aviso: switch + días (condicional) + notas
+  const notifyWrap=h(`<div></div>`);
+  const renderNotify=()=>{
+    notifyWrap.innerHTML="";
+    const on=f.notify!==0;
+    const sw=h(`<div class="switchrow"><div><div class="lbl2">🔔 Avisarme de este pago</div><div class="hint">Recordatorio por WhatsApp antes del cobro</div></div><div class="switch ${on?'on':''}"><div class="knob"></div></div></div>`);
+    $(".switch",sw).addEventListener("click",()=>{ f.notify=on?0:1; renderNotify(); });
+    notifyWrap.appendChild(sw);
+    if(on){
+      notifyWrap.appendChild(field("Avisarme (días antes) — opcional","",()=>{
+        const i=h(`<input class="input" type="number" min="0" placeholder="Usar global (${S().reminder_days})" value="${f.reminder_days}">`);
+        i.addEventListener("input",()=>f.reminder_days=i.value);return i;}));
+    }
+  };
+  renderNotify();
+  card.appendChild(notifyWrap);
   card.appendChild(field("Notas — opcional","",()=>{
     const t=h(`<textarea class="input" placeholder="Detalles, número de póliza, etc.">${esc(f.notes||"")}</textarea>`);
     t.addEventListener("input",()=>f.notes=t.value);return t;}));
@@ -797,6 +895,31 @@ function viewSettings(){
   card2.appendChild(chSeg);
   card2.appendChild(field("Mi número (con código país, ej. +1...)","",()=>{const i=h(`<input class="input" type="tel" placeholder="+1 510 555 1234" value="${s.notify_phone||''}">`);i.addEventListener("input",()=>s.notify_phone=i.value);return i;}));
   p.appendChild(card2);
+
+  // gestión de categorías
+  const cardC=h(`<div class="card"></div>`);
+  cardC.appendChild(h(`<div style="font-weight:700;margin-bottom:4px">🗂️ Categorías</div>`));
+  cardC.appendChild(h(`<div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Crea, renombra, cambia color o borra tus categorías.</div>`));
+  const clist=h(`<div></div>`);
+  const renderCatMgmt=()=>{
+    clist.innerHTML="";
+    (STATE.categories||[]).forEach(c=>{
+      const row=h(`<div class="catrow"><div class="left"><button class="dotbtn" title="Cambiar color" style="width:18px;height:18px;border-radius:50%;background:${c.color};border:2px solid var(--line);padding:0"></button>${esc(c.name)}</div><div style="display:flex;gap:6px"><button class="iconbtn" style="width:34px;height:34px;font-size:14px" title="Renombrar">✏️</button><button class="iconbtn" style="width:34px;height:34px;font-size:14px" title="Borrar">🗑️</button></div></div>`);
+      const dot=$(".dotbtn",row);
+      const [edit,del]=row.querySelectorAll(".iconbtn");
+      dot.addEventListener("click",async()=>{ const idx=COLORS.indexOf(c.color); const next=COLORS[(idx+1)%12]; await api(`/api/categories/${c.id}`,{method:"PUT",body:{color:next}}); await load(); renderCatMgmt(); });
+      edit.addEventListener("click",async()=>{ const nm=prompt("Nuevo nombre:",c.name); if(!nm||!nm.trim())return; await api(`/api/categories/${c.id}`,{method:"PUT",body:{name:nm.trim()}}); await load(); renderCatMgmt(); toast("Renombrada"); });
+      del.addEventListener("click",async()=>{ if(!confirm(`¿Borrar "${c.name}"? Las suscripciones quedarán sin categoría.`))return; await api(`/api/categories/${c.id}`,{method:"DELETE"}); await load(); renderCatMgmt(); toast("Borrada"); });
+      clist.appendChild(row);
+    });
+    if(!(STATE.categories||[]).length) clist.appendChild(h(`<div style="font-size:13px;color:var(--muted2)">Aún no tienes categorías.</div>`));
+  };
+  renderCatMgmt();
+  cardC.appendChild(clist);
+  const addCat=h(`<button class="btn ghost" style="width:100%;margin-top:8px">＋ Nueva categoría</button>`);
+  addCat.addEventListener("click",async()=>{ const name=prompt("Nombre de la categoría:"); if(!name||!name.trim())return; await api("/api/categories",{method:"POST",body:{name:name.trim(),color:COLORS[Math.floor(Math.random()*12)]}}); await load(); renderCatMgmt(); toast("Creada"); });
+  cardC.appendChild(addCat);
+  p.appendChild(cardC);
 
   const save=h(`<button class="btn" style="width:100%;margin-bottom:10px">Guardar ajustes</button>`);
   save.addEventListener("click",async()=>{
