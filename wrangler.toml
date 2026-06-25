@@ -1,0 +1,35 @@
+name = "suscripciones"
+main = "src/index.js"
+compatibility_date = "2025-06-01"
+
+# Sirve los archivos del frontend (public/) automáticamente.
+# El Worker se ejecuta para /api/* y /logo/*.
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+# Base de datos D1: aquí se guarda el 100% de los datos.
+# Reemplaza database_id con el que te dé `wrangler d1 create suscripciones-db`.
+[[d1_databases]]
+binding = "DB"
+database_name = "suscripciones-db"
+database_id = "dc59bc10-629c-4225-bf83-35a50e39d862"
+
+# Bucket R2 para logos de compañías subidos por ti (lo "pesado").
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "suscripciones-logos"
+
+# Recordatorio diario (8:00 UTC ≈ 2:00 a.m. Guatemala). Ajusta si quieres.
+[triggers]
+crons = ["0 13 * * *"]  # 13:00 UTC = 7:00 a.m. Guatemala (UTC-6)
+
+[observability]
+enabled = true
+
+# Variables NO secretas (las secretas se ponen con `wrangler secret put`):
+#   APP_PASSWORD     -> contraseña para entrar a la app
+#   SESSION_SECRET   -> cadena aleatoria larga para firmar la sesión
+#   TWILIO_SID       -> (opcional) Account SID de Twilio
+#   TWILIO_TOKEN     -> (opcional) Auth Token de Twilio
+#   TWILIO_FROM      -> (opcional) número Twilio que envía, ej. +1XXXXXXXXXX

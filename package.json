@@ -1,0 +1,15 @@
+{
+  "name": "suscripciones",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Control de suscripciones y pagos mensuales en Cloudflare Workers + D1 + R2",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute suscripciones-db --remote --file=./schema.sql",
+    "db:init:local": "wrangler d1 execute suscripciones-db --local --file=./schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
