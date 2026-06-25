@@ -96,9 +96,12 @@ async function getFullState(env) {
   const { results: cats } = await env.DB.prepare(
     "SELECT * FROM categories ORDER BY sort_order ASC, id ASC"
   ).all();
+  const mode = settings.order_mode || "auto";
+  const orderBy = mode === "manual"
+    ? "active DESC, sort_order ASC, id ASC"
+    : "active DESC, CASE WHEN next_due_date IS NULL THEN 1 ELSE 0 END, next_due_date ASC, id ASC";
   const { results: subs } = await env.DB.prepare(
-    "SELECT * FROM subscriptions ORDER BY active DESC, manual_sort DESC, " +
-    "CASE WHEN next_due_date IS NULL THEN 1 ELSE 0 END, next_due_date ASC, sort_order ASC, id ASC"
+    `SELECT * FROM subscriptions ORDER BY ${orderBy}`
   ).all();
 
   // Adjuntar pagos de cada suscripción
@@ -335,6 +338,32 @@ async function handleApi(request, env, path) {
     return json({ ok: true });
   }
 
+  // Deshacer el último "pagué"
+  if ((m = path.match(/^\/api\/subscriptions\/(\d+)\/undo-pay$/)) && method === "POST") {
+    const id = Number(m[1]);
+    const s = await env.DB.prepare("SELECT * FROM subscriptions WHERE id=?").bind(id).first();
+    if (!s) return json({ error: "No existe" }, 404);
+    if (s.billing_type === "recurring") {
+      const p = await env.DB.prepare(
+        "SELECT * FROM payments WHERE subscription_id=? AND paid=1 ORDER BY id DESC LIMIT 1"
+      ).bind(id).first();
+      if (p) {
+        await env.DB.prepare("DELETE FROM payments WHERE id=?").bind(p.id).run();
+        await env.DB.prepare("UPDATE subscriptions SET next_due_date=?, last_reminded=NULL WHERE id=?")
+          .bind(p.due_date, id).run();
+      }
+    } else {
+      const p = await env.DB.prepare(
+        "SELECT * FROM payments WHERE subscription_id=? AND paid=1 ORDER BY paid_date DESC, id DESC LIMIT 1"
+      ).bind(id).first();
+      if (p) {
+        await env.DB.prepare("UPDATE payments SET paid=0, paid_date=NULL WHERE id=?").bind(p.id).run();
+        await recomputeManualDue(env, id);
+      }
+    }
+    return json({ ok: true });
+  }
+
   // Agregar pago manual a una suscripción
   if ((m = path.match(/^\/api\/subscriptions\/(\d+)\/payments$/)) && method === "POST") {
     const id = Number(m[1]);
@@ -367,7 +396,7 @@ async function handleApi(request, env, path) {
     return json({ ok: true });
   }
 
-  // Reordenar manualmente (drag)
+  // Reordenar manualmente (drag) — activa el modo manual
   if (path === "/api/reorder" && method === "POST") {
     const { order } = await request.json();
     let i = 0;
@@ -375,11 +404,17 @@ async function handleApi(request, env, path) {
       await env.DB.prepare("UPDATE subscriptions SET sort_order=?, manual_sort=1 WHERE id=?")
         .bind(i++, id).run();
     }
+    await env.DB.prepare(
+      "INSERT INTO settings (key,value) VALUES ('order_mode','manual') ON CONFLICT(key) DO UPDATE SET value='manual'"
+    ).run();
     return json({ ok: true });
   }
-  // Volver a orden automático por fecha
+  // Volver a orden automático por fecha (vencidos primero)
   if (path === "/api/reorder/auto" && method === "POST") {
     await env.DB.prepare("UPDATE subscriptions SET manual_sort=0").run();
+    await env.DB.prepare(
+      "INSERT INTO settings (key,value) VALUES ('order_mode','auto') ON CONFLICT(key) DO UPDATE SET value='auto'"
+    ).run();
     return json({ ok: true });
   }
 

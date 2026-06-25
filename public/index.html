@@ -102,6 +102,7 @@ input,select,textarea{font-family:inherit;font-size:16px}
   border-radius:18px;padding:13px 14px;position:relative;transition:transform .12s, box-shadow .2s;
   touch-action:pan-y
 }
+.subcard.overdue{border-left:3px solid var(--red);background:linear-gradient(90deg,rgba(251,113,133,.08),var(--card) 40%)}
 .subcard.dragging{opacity:.6;box-shadow:var(--shadow);transform:scale(1.02);z-index:5}
 .subcard.drop-target{box-shadow:0 0 0 2px var(--brand) inset}
 .avatar{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-size:24px;
@@ -215,6 +216,17 @@ textarea.input{resize:vertical;min-height:64px}
   font-size:14px;font-weight:600;box-shadow:var(--shadow);opacity:0;pointer-events:none;
   transition:opacity .25s, transform .25s;z-index:60;max-width:90%}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* acordeón (secciones plegables) */
+.acc{border:1px solid var(--line);border-radius:14px;margin-bottom:11px;background:var(--bg2);overflow:hidden}
+.acc-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px;font-weight:700;font-size:14px;background:transparent;color:var(--txt)}
+.acc-head:active{background:rgba(255,255,255,.03)}
+.acc-right{display:flex;align-items:center;gap:9px;color:var(--muted);min-width:0}
+.acc-sub{font-size:12.5px;color:var(--muted);font-weight:600;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acc-arrow{transition:transform .2s;font-size:12px;flex-shrink:0}
+.acc.open .acc-arrow{transform:rotate(180deg)}
+.acc-body{display:none;padding:2px 14px 14px}
+.acc.open .acc-body{display:block}
 
 /* filtros por categoría */
 .filterbar{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 12px;margin:0 -2px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
@@ -351,6 +363,7 @@ function heroBg(){ const t=(STATE&&STATE.settings&&STATE.settings.hero_theme)||"
 function $(s,el=document){return el.querySelector(s)}
 function h(html){const t=document.createElement("template");t.innerHTML=html.trim();return t.content.firstElementChild}
 function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2200)}
+function toastAction(m,label,fn,ms=6000){const t=$("#toast");t.innerHTML=`<span>${esc(m)}</span><button id="toastBtn" style="margin-left:14px;color:var(--accent);font-weight:800;background:none">${esc(label)}</button>`;t.classList.add("show");clearTimeout(t._t);$("#toastBtn").onclick=()=>{t.classList.remove("show");clearTimeout(t._t);fn();};t._t=setTimeout(()=>t.classList.remove("show"),ms);}
 
 async function api(path, opt={}){
   const o={headers:{}, ...opt};
@@ -472,7 +485,7 @@ function viewQueue(){
   if((STATE.categories||[]).length) p.appendChild(filterBar());
 
   // section header + order toggle
-  const manual=subs.some(s=>s.manual_sort);
+  const manual=(S().order_mode==="manual");
   p.appendChild(h(`<div class="sectionhdr"><div class="t">Cola de pagos</div>
     <button class="toggleorder" onclick="${manual?'autoOrder()':''}">${manual?'↺ Orden automático':'↕ Arrastra para reordenar'}</button></div>`));
 
@@ -493,7 +506,8 @@ function subCard(s){
   const cat=catById(s.category_id);
   const catPill=cat?`<span class="pill" style="background:${cat.color}22;color:${cat.color}">${esc(cat.name)}</span>`:"";
   const mute=s.notify===0?`<span title="Aviso desactivado">🔕</span>`:"";
-  const card=h(`<div class="subcard" data-id="${s.id}">
+  const over=(s.days_until!=null && s.days_until<0);
+  const card=h(`<div class="subcard ${over?'overdue':''}" data-id="${s.id}">
     ${avatarHtml(s)}
     <div class="subinfo">
       <div class="nm">${esc(s.name)} ${mute}</div>
@@ -551,8 +565,14 @@ function payItem(p){
 }
 
 async function markPaid(id){
-  try{ await api(`/api/subscriptions/${id}/pay`,{method:"POST"}); toast("¡Pago registrado! Movido en la cola"); await reload(); }
-  catch(e){ toast(e.message); }
+  try{
+    await api(`/api/subscriptions/${id}/pay`,{method:"POST"});
+    await reload();
+    toastAction("✓ Pago registrado","Deshacer",async()=>{
+      try{ await api(`/api/subscriptions/${id}/undo-pay`,{method:"POST"}); await reload(); toast("Pago revertido ✓"); }
+      catch(e){ toast(e.message); }
+    });
+  }catch(e){ toast(e.message); }
 }
 async function addManualPayment(s){
   const date=prompt("Fecha del pago (AAAA-MM-DD):", STATE.today);
@@ -660,11 +680,12 @@ function viewForm(){
     i.addEventListener("input",()=>{f.name=i.value;refreshPreview();}); return i;
   }));
 
-  // categoría
-  card.appendChild(label("Categoría"));
-  const catWrap=h(`<div class="catchips" style="margin-bottom:14px"></div>`);
+  // categoría (plegable)
+  const accCat=accordion("🏷️ Categoría");
+  const catWrap=h(`<div class="catchips"></div>`);
   const renderCats=()=>{
     catWrap.innerHTML="";
+    const selC=catById(f.category_id); accCat.sub.textContent=selC?selC.name:"Ninguna";
     (STATE.categories||[]).forEach(c=>{
       const on=String(f.category_id)===String(c.id);
       const chip=h(`<button type="button" class="catchip ${on?'on':''}" style="${on?`background:${c.color};border-color:transparent`:''}"><span class="dot" style="background:${c.color}"></span>${esc(c.name)}</button>`);
@@ -681,7 +702,8 @@ function viewForm(){
     catWrap.appendChild(add);
   };
   renderCats();
-  card.appendChild(catWrap);
+  accCat.body.appendChild(catWrap);
+  card.appendChild(accCat.sec);
 
   // icono: tipo
   const iconSeg=h(`<div class="seg" style="margin-bottom:11px">
@@ -734,13 +756,15 @@ function viewForm(){
       iconArea.appendChild(box);
     }
   }
-  iconSeg.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{f.icon_type=b.dataset.v;if(b.dataset.v==="emoji"&&!EMOJIS.includes(f.icon_value))f.icon_value="💳";renderIconArea();refreshPreview();}));
-  card.appendChild(label("Icono"));
-  card.appendChild(iconSeg); card.appendChild(iconArea); renderIconArea();
+  iconSeg.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{f.icon_type=b.dataset.v;if(b.dataset.v==="emoji"&&!EMOJIS.includes(f.icon_value))f.icon_value="💳";renderIconArea();refreshPreview();accIcon.sub.textContent=f.icon_type==="emoji"?"Emoji":f.icon_type==="letter"?"Inicial":"Logo";}));
+  const accIcon=accordion("🖼️ Icono");
+  accIcon.sub.textContent=f.icon_type==="emoji"?"Emoji":f.icon_type==="letter"?"Inicial":"Logo";
+  accIcon.body.appendChild(iconSeg); accIcon.body.appendChild(iconArea); renderIconArea();
+  card.appendChild(accIcon.sec);
 
-  // color
-  card.appendChild(label("Color"));
-  const cr=h(`<div class="colorrow" style="margin-bottom:14px"></div>`);
+  // color (plegable)
+  const accColor=accordion("🎨 Color");
+  const cr=h(`<div class="colorrow"></div>`);
   COLORS.forEach(c=>{
     let style, title="";
     if(c==="transparent"){ style="background:repeating-conic-gradient(#9aa3c7 0% 25%, #2a3460 0% 50%) 50% / 12px 12px;border:1px solid var(--line)"; title="Sin fondo"; }
@@ -750,8 +774,9 @@ function viewForm(){
     sw.addEventListener("click",()=>{f.color=c;cr.querySelectorAll(".swatch").forEach(x=>x.classList.remove("on"));sw.classList.add("on");refreshPreview();});
     cr.appendChild(sw);
   });
-  card.appendChild(h(`<div style="font-size:11.5px;color:var(--muted2);margin:-4px 0 10px">Tip: usa blanco para logos como Microsoft, o "sin fondo" (cuadros) para logos transparentes.</div>`));
-  card.appendChild(cr);
+  accColor.body.appendChild(h(`<div style="font-size:11.5px;color:var(--muted2);margin-bottom:10px">Tip: usa blanco para logos como Microsoft, o "sin fondo" (cuadros) para logos transparentes.</div>`));
+  accColor.body.appendChild(cr);
+  card.appendChild(accColor.sec);
 
   // monto + moneda
   const moneyRow=h(`<div class="two"></div>`);
@@ -820,9 +845,13 @@ function viewForm(){
   };
   renderNotify();
   card.appendChild(notifyWrap);
-  card.appendChild(field("Notas — opcional","",()=>{
-    const t=h(`<textarea class="input" placeholder="Detalles, número de póliza, etc.">${esc(f.notes||"")}</textarea>`);
-    t.addEventListener("input",()=>f.notes=t.value);return t;}));
+
+  // notas (plegable)
+  const accNotes=accordion("📝 Notas");
+  accNotes.body.appendChild(h(`<textarea class="input" placeholder="Detalles, número de póliza, etc.">${esc(f.notes||"")}</textarea>`));
+  $("textarea",accNotes.body).addEventListener("input",(e)=>f.notes=e.target.value);
+  if(f.notes) accNotes.sub.textContent="✓";
+  card.appendChild(accNotes.sec);
 
   p.appendChild(card);
 
@@ -949,6 +978,11 @@ function viewSettings(){
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 function label(t){return h(`<div style="font-size:12.5px;color:var(--muted);font-weight:600;margin-bottom:7px">${t}</div>`)}
 function field(lbl,_,make){const f=h(`<div class="field"></div>`);f.appendChild(label(lbl));f.appendChild(make());return f;}
+function accordion(title, opened){
+  const sec=h(`<div class="acc ${opened?'open':''}"><button type="button" class="acc-head"><span>${title}</span><span class="acc-right"><span class="acc-sub"></span><span class="acc-arrow">▾</span></span></button><div class="acc-body"></div></div>`);
+  $(".acc-head",sec).addEventListener("click",()=>sec.classList.toggle("open"));
+  return {sec, body:$(".acc-body",sec), sub:$(".acc-sub",sec)};
+}
 
 /* ============================== drag reorder ============================== */
 function enableDrag(list){
