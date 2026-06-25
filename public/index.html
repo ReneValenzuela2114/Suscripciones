@@ -16,7 +16,14 @@
   --r:20px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%}
+html,body{margin:0;height:100%;width:100%;max-width:100%;overflow-x:hidden}
+
+/* pantalla de arranque */
+#boot{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(700px 460px at 50% 0%, #1a2350, #0b1020)}
+#boot.hidden{display:none}
+.bootlogo{font-size:58px;animation:bootpulse 1.1s ease-in-out infinite;filter:drop-shadow(0 8px 22px rgba(99,102,241,.55))}
+@keyframes bootpulse{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.12);opacity:1}}
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif;
   color:var(--txt); background:
@@ -285,6 +292,10 @@ textarea.input{resize:vertical;min-height:64px}
   .emojigrid button{font-size:20px}
   .seg button{font-size:12px;padding:10px 6px}
   .avatar{width:44px;height:44px;font-size:22px}
+  .nav button{padding:6px 8px;font-size:10px}
+  .nav button .ic{font-size:20px}
+  .modal-ov{padding:20px}
+  .subright .amt{font-size:14px}
 }
 @media (max-width:340px){
   .emojigrid{grid-template-columns:repeat(4,minmax(0,1fr))}
@@ -293,8 +304,11 @@ textarea.input{resize:vertical;min-height:64px}
 </head>
 <body>
 
+<!-- BOOT (pantalla de carga inicial, evita el parpadeo) -->
+<div id="boot"><div class="bootlogo">💳</div></div>
+
 <!-- LOGIN -->
-<div id="login">
+<div id="login" class="hidden">
   <div class="logo">💳</div>
   <h1>Mis Suscripciones</h1>
   <p>Ingresa tu contraseña para continuar</p>
@@ -1075,10 +1089,19 @@ function enableDrag(list){
 
 /* ============================== init ============================== */
 (async function(){
+  const boot=$("#boot");
   if(TOKEN){
-    try{ await load(); $("#login").classList.add("hidden"); $("#app").classList.remove("hidden"); $("#nav").classList.remove("hidden"); go("queue"); }
-    catch(e){ logout(); }
+    try{
+      await load();
+      $("#app").classList.remove("hidden"); $("#nav").classList.remove("hidden"); go("queue");
+    }catch(e){
+      TOKEN=""; localStorage.removeItem("sub_token");
+      $("#login").classList.remove("hidden");
+    }
+  }else{
+    $("#login").classList.remove("hidden");
   }
+  if(boot) boot.classList.add("hidden");
 })();
 </script>
 </body>
