@@ -521,8 +521,26 @@ function subCard(s){
   // expand on tap (info area)
   $(".subinfo",card).addEventListener("click",()=>{ card.classList.toggle("open"); if(card.classList.contains("open")&&!$(".details",card)) renderDetails(card,s); });
   $(".avatar",card).addEventListener("click",()=>{ card.classList.toggle("open"); if(card.classList.contains("open")&&!$(".details",card)) renderDetails(card,s); });
-  $(".paybtn",card).addEventListener("click",(e)=>{e.stopPropagation();markPaid(s.id);});
+  const pb=$(".paybtn",card);
+  let holdT=null, held=false;
+  pb.addEventListener("touchstart",(e)=>e.stopPropagation(),{passive:true});
+  pb.addEventListener("mousedown",(e)=>e.stopPropagation());
+  pb.addEventListener("pointerdown",(e)=>{ e.stopPropagation(); held=false;
+    holdT=setTimeout(()=>{ held=true; navigator.vibrate&&navigator.vibrate(25); confirmUndo(s); },650); });
+  pb.addEventListener("pointerup",(e)=>{ e.stopPropagation(); clearTimeout(holdT); if(!held) markPaid(s.id); });
+  pb.addEventListener("pointercancel",()=>clearTimeout(holdT));
+  pb.addEventListener("pointerleave",()=>clearTimeout(holdT));
+  pb.addEventListener("click",(e)=>{ e.stopPropagation(); e.preventDefault(); });
   return card;
+}
+
+async function confirmUndo(s){
+  if(!confirm(`¿Deshacer el último pago de "${s.name}"?\n\nVolverá a la fecha del pago anterior. Puedes mantener presionado de nuevo para retroceder más pagos.`)) return;
+  try{
+    const r=await api(`/api/subscriptions/${s.id}/undo-pay`,{method:"POST"});
+    await reload();
+    toast(r.undone ? "Pago revertido ✓" : "No hay pagos que deshacer");
+  }catch(e){ toast(e.message); }
 }
 
 function renderDetails(card,s){
@@ -568,10 +586,7 @@ async function markPaid(id){
   try{
     await api(`/api/subscriptions/${id}/pay`,{method:"POST"});
     await reload();
-    toastAction("✓ Pago registrado","Deshacer",async()=>{
-      try{ await api(`/api/subscriptions/${id}/undo-pay`,{method:"POST"}); await reload(); toast("Pago revertido ✓"); }
-      catch(e){ toast(e.message); }
-    });
+    toast("✓ Pago registrado · mantén presionado Pagué para deshacer");
   }catch(e){ toast(e.message); }
 }
 async function addManualPayment(s){

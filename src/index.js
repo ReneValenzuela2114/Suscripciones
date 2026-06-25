@@ -343,6 +343,7 @@ async function handleApi(request, env, path) {
     const id = Number(m[1]);
     const s = await env.DB.prepare("SELECT * FROM subscriptions WHERE id=?").bind(id).first();
     if (!s) return json({ error: "No existe" }, 404);
+    let undone = false;
     if (s.billing_type === "recurring") {
       const p = await env.DB.prepare(
         "SELECT * FROM payments WHERE subscription_id=? AND paid=1 ORDER BY id DESC LIMIT 1"
@@ -351,6 +352,7 @@ async function handleApi(request, env, path) {
         await env.DB.prepare("DELETE FROM payments WHERE id=?").bind(p.id).run();
         await env.DB.prepare("UPDATE subscriptions SET next_due_date=?, last_reminded=NULL WHERE id=?")
           .bind(p.due_date, id).run();
+        undone = true;
       }
     } else {
       const p = await env.DB.prepare(
@@ -359,9 +361,10 @@ async function handleApi(request, env, path) {
       if (p) {
         await env.DB.prepare("UPDATE payments SET paid=0, paid_date=NULL WHERE id=?").bind(p.id).run();
         await recomputeManualDue(env, id);
+        undone = true;
       }
     }
-    return json({ ok: true });
+    return json({ ok: true, undone });
   }
 
   // Agregar pago manual a una suscripción
