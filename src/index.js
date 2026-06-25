@@ -96,12 +96,9 @@ async function getFullState(env) {
   const { results: cats } = await env.DB.prepare(
     "SELECT * FROM categories ORDER BY sort_order ASC, id ASC"
   ).all();
-  const mode = settings.order_mode || "auto";
-  const orderBy = mode === "manual"
-    ? "active DESC, sort_order ASC, id ASC"
-    : "active DESC, CASE WHEN next_due_date IS NULL THEN 1 ELSE 0 END, next_due_date ASC, id ASC";
   const { results: subs } = await env.DB.prepare(
-    `SELECT * FROM subscriptions ORDER BY ${orderBy}`
+    "SELECT * FROM subscriptions ORDER BY active DESC, " +
+    "CASE WHEN next_due_date IS NULL THEN 1 ELSE 0 END, next_due_date ASC, id ASC"
   ).all();
 
   // Adjuntar pagos de cada suscripción
@@ -412,28 +409,6 @@ async function handleApi(request, env, path) {
       .bind(paid, paid ? todayISO() : null, pid).run();
     const p = await env.DB.prepare("SELECT subscription_id FROM payments WHERE id=?").bind(pid).first();
     if (p) await recomputeManualDue(env, p.subscription_id);
-    return json({ ok: true });
-  }
-
-  // Reordenar manualmente (drag) — activa el modo manual
-  if (path === "/api/reorder" && method === "POST") {
-    const { order } = await request.json();
-    let i = 0;
-    for (const id of order) {
-      await env.DB.prepare("UPDATE subscriptions SET sort_order=?, manual_sort=1 WHERE id=?")
-        .bind(i++, id).run();
-    }
-    await env.DB.prepare(
-      "INSERT INTO settings (key,value) VALUES ('order_mode','manual') ON CONFLICT(key) DO UPDATE SET value='manual'"
-    ).run();
-    return json({ ok: true });
-  }
-  // Volver a orden automático por fecha (vencidos primero)
-  if (path === "/api/reorder/auto" && method === "POST") {
-    await env.DB.prepare("UPDATE subscriptions SET manual_sort=0").run();
-    await env.DB.prepare(
-      "INSERT INTO settings (key,value) VALUES ('order_mode','auto') ON CONFLICT(key) DO UPDATE SET value='auto'"
-    ).run();
     return json({ ok: true });
   }
 

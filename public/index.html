@@ -529,10 +529,8 @@ function viewQueue(){
   // filtros por categoría
   if((STATE.categories||[]).length) p.appendChild(filterBar());
 
-  // section header + order toggle
-  const manual=(S().order_mode==="manual");
   p.appendChild(h(`<div class="sectionhdr"><div class="t">Cola de pagos</div>
-    <button class="toggleorder" onclick="${manual?'autoOrder()':''}">${manual?'↺ Orden automático':'↕ Arrastra para reordenar'}</button></div>`));
+    <span class="toggleorder" style="color:var(--muted2)">↓ por fecha</span></div>`));
 
   const shown=applyFilter(subs);
   if(!shown.length){
@@ -542,7 +540,6 @@ function viewQueue(){
   const list=h(`<div class="list" id="queueList"></div>`);
   shown.forEach(s=>list.appendChild(subCard(s)));
   p.appendChild(list);
-  if(curFilter()==="all") enableDrag(list);
   return p;
 }
 
@@ -647,7 +644,6 @@ async function delSub(id,name){
   if(!confirm(`¿Borrar "${name}" y todo su historial?`)) return;
   await api(`/api/subscriptions/${id}`,{method:"DELETE"}); toast("Eliminada"); reload();
 }
-async function autoOrder(){ await api("/api/reorder/auto",{method:"POST"}); toast("Orden automático por fecha"); reload(); }
 
 /* ============================== vista: todas ============================== */
 function viewAll(){
@@ -1046,48 +1042,6 @@ function accordion(title, opened){
   const sec=h(`<div class="acc ${opened?'open':''}"><button type="button" class="acc-head"><span>${title}</span><span class="acc-right"><span class="acc-sub"></span><span class="acc-arrow">▾</span></span></button><div class="acc-body"></div></div>`);
   $(".acc-head",sec).addEventListener("click",()=>sec.classList.toggle("open"));
   return {sec, body:$(".acc-body",sec), sub:$(".acc-sub",sec)};
-}
-
-/* ============================== drag reorder ============================== */
-function enableDrag(list){
-  let drag=null,placeholderIdx=null,startY=0;
-  list.querySelectorAll(".subcard").forEach(card=>{
-    const av=$(".avatar",card);
-    let hold=null;
-    const start=(e)=>{
-      hold=setTimeout(()=>{
-        drag=card; card.classList.add("dragging");
-        startY=(e.touches?e.touches[0].clientY:e.clientY);
-        document.body.style.userSelect="none";
-        navigator.vibrate&&navigator.vibrate(15);
-      },220);
-    };
-    const cancel=()=>{clearTimeout(hold);};
-    card.addEventListener("touchstart",start,{passive:true});
-    card.addEventListener("touchend",cancel);
-    card.addEventListener("touchmove",cancel);
-    card.addEventListener("mousedown",start);
-    card.addEventListener("mouseup",cancel);
-    card.addEventListener("mouseleave",cancel);
-  });
-  function move(e){
-    if(!drag) return;
-    const y=(e.touches?e.touches[0].clientY:e.clientY);
-    const cards=[...list.querySelectorAll(".subcard:not(.dragging)")];
-    const after=cards.find(c=>{const r=c.getBoundingClientRect();return y<r.top+r.height/2;});
-    if(after) list.insertBefore(drag,after); else list.appendChild(drag);
-    e.preventDefault&&e.preventDefault();
-  }
-  function end(){
-    if(!drag) return;
-    drag.classList.remove("dragging"); drag=null; document.body.style.userSelect="";
-    const order=[...list.querySelectorAll(".subcard")].map(c=>Number(c.dataset.id));
-    api("/api/reorder",{method:"POST",body:{order}}).then(()=>{toast("Orden guardado");load();});
-  }
-  document.addEventListener("touchmove",move,{passive:false});
-  document.addEventListener("mousemove",move);
-  document.addEventListener("touchend",end);
-  document.addEventListener("mouseup",end);
 }
 
 /* ============================== init ============================== */
