@@ -120,8 +120,9 @@ input,select,textarea{font-family:inherit;font-size:16px}
 .subright .amt{font-weight:800;font-size:15px}
 .subright .cur{font-size:10px;color:var(--muted2);font-weight:700}
 .paybtn{background:linear-gradient(135deg,var(--green),#10b981);color:#04231a;font-weight:800;
-  font-size:12px;padding:7px 12px;border-radius:10px}
+  font-size:12px;padding:7px 12px;border-radius:10px;touch-action:none;user-select:none;-webkit-user-select:none}
 .paybtn:active{transform:scale(.95)}
+.paybtn.holding{transform:scale(.85);transition:transform .65s ease;box-shadow:0 0 0 3px rgba(251,113,133,.4)}
 
 /* expand details */
 .details{margin-top:11px;padding-top:12px;border-top:1px dashed var(--line);display:none;flex-direction:column;gap:9px}
@@ -523,13 +524,18 @@ function subCard(s){
   $(".avatar",card).addEventListener("click",()=>{ card.classList.toggle("open"); if(card.classList.contains("open")&&!$(".details",card)) renderDetails(card,s); });
   const pb=$(".paybtn",card);
   let holdT=null, held=false;
+  const startHold=(e)=>{
+    held=false;
+    try{ pb.setPointerCapture(e.pointerId); }catch(_){}
+    pb.classList.add("holding");
+    holdT=setTimeout(()=>{ held=true; pb.classList.remove("holding"); navigator.vibrate&&navigator.vibrate(25); confirmUndo(s); },650);
+  };
+  const endHold=(doTap)=>{ clearTimeout(holdT); pb.classList.remove("holding"); if(doTap && !held) markPaid(s.id); };
   pb.addEventListener("touchstart",(e)=>e.stopPropagation(),{passive:true});
   pb.addEventListener("mousedown",(e)=>e.stopPropagation());
-  pb.addEventListener("pointerdown",(e)=>{ e.stopPropagation(); held=false;
-    holdT=setTimeout(()=>{ held=true; navigator.vibrate&&navigator.vibrate(25); confirmUndo(s); },650); });
-  pb.addEventListener("pointerup",(e)=>{ e.stopPropagation(); clearTimeout(holdT); if(!held) markPaid(s.id); });
-  pb.addEventListener("pointercancel",()=>clearTimeout(holdT));
-  pb.addEventListener("pointerleave",()=>clearTimeout(holdT));
+  pb.addEventListener("pointerdown",(e)=>{ e.stopPropagation(); startHold(e); });
+  pb.addEventListener("pointerup",(e)=>{ e.stopPropagation(); endHold(true); });
+  pb.addEventListener("pointercancel",()=>endHold(false));
   pb.addEventListener("click",(e)=>{ e.stopPropagation(); e.preventDefault(); });
   return card;
 }
