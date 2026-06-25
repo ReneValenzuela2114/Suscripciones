@@ -286,6 +286,19 @@ let EDIT_ID = null;
 
 const EMOJIS = ["💳","📺","🎬","🎵","🎮","☁️","📱","🛡️","🚗","🏠","💡","💧","📶","🔥","🍿","📚","🧠","🤖","💪","🎧","🛒","✈️","🐱","📰","🩺","💼","🌐","⚡","🎨","🔑","📡","🏦"];
 const COLORS = ["#6366f1","#8b5cf6","#ec4899","#f43f5e","#f59e0b","#10b981","#06b6d4","#3b82f6","#84cc16","#a855f7","#ef4444","#14b8a6","#ffffff","transparent"];
+const GRADIENTS = {
+  violeta:  {name:"Violeta",   css:"linear-gradient(135deg,#5b54f0,#8b5cf6 55%,#c026d3)"},
+  oceano:   {name:"Océano",    css:"linear-gradient(135deg,#0ea5e9,#2563eb 55%,#4f46e5)"},
+  esmeralda:{name:"Esmeralda", css:"linear-gradient(135deg,#10b981,#059669 55%,#0d9488)"},
+  atardecer:{name:"Atardecer", css:"linear-gradient(135deg,#f59e0b,#f43f5e 55%,#ec4899)"},
+  cian:     {name:"Cian",      css:"linear-gradient(135deg,#06b6d4,#3b82f6 55%,#6366f1)"},
+  rosa:     {name:"Rosa",      css:"linear-gradient(135deg,#ec4899,#d946ef 55%,#a855f7)"},
+  bosque:   {name:"Bosque",    css:"linear-gradient(135deg,#14b8a6,#0ea5e9 55%,#6366f1)"},
+  grafito:  {name:"Grafito",   css:"linear-gradient(135deg,#475569,#1e293b 55%,#0f172a)"},
+  dorado:   {name:"Dorado",    css:"linear-gradient(135deg,#d97706,#b45309 55%,#1c1917)"},
+  carmesi:  {name:"Carmesí",   css:"linear-gradient(135deg,#f43f5e,#e11d48 55%,#9f1239)"}
+};
+function heroBg(){ const t=(STATE&&STATE.settings&&STATE.settings.hero_theme)||"violeta"; return (GRADIENTS[t]||GRADIENTS.violeta).css; }
 
 function $(s,el=document){return el.querySelector(s)}
 function h(html){const t=document.createElement("template");t.innerHTML=html.trim();return t.content.firstElementChild}
@@ -384,7 +397,7 @@ function viewQueue(){
   // hero
   if(sum.next_payment){
     const np=sum.next_payment; const dl=dueLabel(np.days);
-    p.appendChild(h(`<div class="hero">
+    p.appendChild(h(`<div class="hero" style="background:${heroBg()}">
       <div class="lbl">Próximo pago</div>
       <div class="name">${esc(np.name)}</div>
       <div class="row"><div class="amt">${money(np.amount,np.currency)}</div>
@@ -756,6 +769,25 @@ function viewSettings(){
   card.appendChild(field("Avisarme por defecto (días antes)","",()=>{const i=h(`<input class="input" type="number" min="0" value="${s.reminder_days||'3'}">`);i.addEventListener("input",()=>s.reminder_days=i.value);return i;}));
   p.appendChild(card);
 
+  // apariencia: color del panel principal
+  const cardA=h(`<div class="card"></div>`);
+  cardA.appendChild(h(`<div style="font-weight:700;margin-bottom:4px">🎨 Color del panel principal</div>`));
+  cardA.appendChild(h(`<div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Elige el estilo del cuadro grande de "Próximo pago".</div>`));
+  const cur=s.hero_theme||"violeta";
+  const grow=h(`<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px"></div>`);
+  Object.keys(GRADIENTS).forEach(k=>{
+    const g=GRADIENTS[k];
+    const chip=h(`<button type="button" style="position:relative;height:54px;border-radius:14px;background:${g.css};border:2px solid ${cur===k?'#fff':'transparent'};box-shadow:${cur===k?'0 0 0 2px var(--brand)':'none'};display:flex;align-items:flex-end;padding:8px;font-weight:800;font-size:12px;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)">${g.name}</button>`);
+    chip.addEventListener("click",()=>{
+      s.hero_theme=k;
+      grow.querySelectorAll("button").forEach(b=>{b.style.border="2px solid transparent";b.style.boxShadow="none";});
+      chip.style.border="2px solid #fff"; chip.style.boxShadow="0 0 0 2px var(--brand)";
+    });
+    grow.appendChild(chip);
+  });
+  cardA.appendChild(grow);
+  p.appendChild(cardA);
+
   const card2=h(`<div class="card"></div>`);
   card2.appendChild(h(`<div style="font-weight:700;margin-bottom:4px">🔔 Recordatorios</div>`));
   card2.appendChild(h(`<div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Elige cómo recibir los avisos. El banner dentro de la app siempre funciona; el SMS requiere configurar Twilio (ver instrucciones).</div>`));
@@ -768,10 +800,23 @@ function viewSettings(){
 
   const save=h(`<button class="btn" style="width:100%;margin-bottom:10px">Guardar ajustes</button>`);
   save.addEventListener("click",async()=>{
-    await api("/api/settings",{method:"PUT",body:{display_currency:s.display_currency,exchange_rate:s.exchange_rate,reminder_days:s.reminder_days,notify_channel:s.notify_channel,notify_phone:s.notify_phone}});
+    await api("/api/settings",{method:"PUT",body:{display_currency:s.display_currency,exchange_rate:s.exchange_rate,reminder_days:s.reminder_days,notify_channel:s.notify_channel,notify_phone:s.notify_phone,hero_theme:s.hero_theme}});
     toast("Ajustes guardados"); await reload(); go("settings");
   });
   p.appendChild(save);
+
+  const test=h(`<button class="btn ghost" style="width:100%;margin-bottom:10px">📨 Enviar aviso de prueba</button>`);
+  test.addEventListener("click",async()=>{
+    test.textContent="Enviando..."; test.disabled=true;
+    try{
+      await api("/api/settings",{method:"PUT",body:{display_currency:s.display_currency,exchange_rate:s.exchange_rate,reminder_days:s.reminder_days,notify_channel:s.notify_channel,notify_phone:s.notify_phone,hero_theme:s.hero_theme}});
+      const r=await api("/api/test-notify",{method:"POST"});
+      toast("¡Enviado! Revisa tu WhatsApp 🟢");
+    }catch(e){ toast(e.message); }
+    test.textContent="📨 Enviar aviso de prueba"; test.disabled=false;
+  });
+  p.appendChild(test);
+
   p.appendChild(h(`<button class="btn ghost" style="width:100%" onclick="logout()">Cerrar sesión</button>`));
   p.appendChild(h(`<div style="text-align:center;color:var(--muted2);font-size:12px;margin-top:18px">Datos en Cloudflare D1 · Logos en R2</div>`));
   return p;

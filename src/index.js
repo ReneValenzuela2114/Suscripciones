@@ -195,7 +195,7 @@ async function handleApi(request, env, path) {
   // Settings
   if (path === "/api/settings" && method === "PUT") {
     const body = await request.json();
-    const allowed = ["display_currency", "exchange_rate", "reminder_days", "notify_phone", "notify_channel"];
+    const allowed = ["display_currency", "exchange_rate", "reminder_days", "notify_phone", "notify_channel", "hero_theme"];
     for (const k of allowed) {
       if (k in body) {
         await env.DB.prepare(
@@ -204,6 +204,19 @@ async function handleApi(request, env, path) {
       }
     }
     return json({ ok: true });
+  }
+
+  // Enviar un aviso de prueba ahora mismo
+  if (path === "/api/test-notify" && method === "POST") {
+    const st = await readSettings(env);
+    const phone = (st.notify_phone || "").trim();
+    const channel = st.notify_channel || "app";
+    if (channel === "app") return json({ ok: false, error: "El canal está en 'App'. Elige WhatsApp o SMS para enviar avisos." }, 400);
+    if (!phone) return json({ ok: false, error: "Falta tu número en Ajustes." }, 400);
+    const body = "✅ Prueba de tu app de Suscripciones: ¡los recordatorios funcionan! Aquí te avisaré de tus próximos pagos.";
+    const r = channel === "whatsapp" ? await sendWhatsApp(env, phone, body) : await sendSMS(env, phone, body);
+    if (r.ok) return json({ ok: true });
+    return json({ ok: false, error: r.error || "No se pudo enviar." }, 400);
   }
 
   // Crear suscripción
@@ -354,7 +367,8 @@ async function handleApi(request, env, path) {
 
 /* --------------------------- recordatorios (cron) -------------------------- */
 async function twilioSend(env, To, From, body) {
-  if (!env.TWILIO_SID || !env.TWILIO_TOKEN || !From || !To) return false;
+  if (!env.TWILIO_SID || !env.TWILIO_TOKEN) return { ok: false, error: "Faltan credenciales de Twilio (TWILIO_SID/TWILIO_TOKEN)." };
+  if (!From || !To) return { ok: false, error: "Falta el número de origen o destino." };
   const url = `https://api.twilio.com/2010-04-01/Accounts/${env.TWILIO_SID}/Messages.json`;
   const form = new URLSearchParams({ To, From, Body: body });
   const res = await fetch(url, {
@@ -365,7 +379,10 @@ async function twilioSend(env, To, From, body) {
     },
     body: form,
   });
-  return res.ok;
+  if (res.ok) return { ok: true };
+  let detail = "";
+  try { const j = await res.json(); detail = j.message || JSON.stringify(j); } catch (e) {}
+  return { ok: false, error: `Twilio (${res.status}): ${detail}` };
 }
 async function sendSMS(env, to, body) {
   return twilioSend(env, to, env.TWILIO_FROM, body);
