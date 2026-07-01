@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<meta name="theme-color" content="#0b1020" />
+<meta name="theme-color" content="#F4F7FB" />
 <title>Mis Suscripciones</title>
 <link rel="icon" type="image/png" href="/icon.png" />
 <link rel="apple-touch-icon" href="/icon.png" />
@@ -305,6 +305,56 @@ textarea.input{resize:vertical;min-height:64px}
 @media (max-width:340px){
   .emojigrid{grid-template-columns:repeat(4,minmax(0,1fr))}
 }
+</style>
+<style id="theme-nueva-apariencia">
+/* ===== Nueva apariencia · Opción A "Claro & Aireado" (solo estilos) ===== */
+:root{
+  --bg:#F4F7FB; --bg2:#EDF1F8; --card:#FFFFFF; --card2:#F5F8FC;
+  --line:rgba(15,23,42,.09); --txt:#0F1B33; --muted:#5E6B85; --muted2:#9AA6BE;
+  --brand:#2563EB; --brand2:#3B82F6; --accent:#2563EB;
+  --green:#0F9D6B; --amber:#D9870B; --red:#E23B5A;
+  --shadow:0 8px 24px rgba(15,23,42,.08);
+  --r:18px;
+}
+html{background:#F4F7FB}
+body{ color:var(--txt); background:
+  radial-gradient(900px 520px at 90% -12%, #E6EEFB 0%, transparent 55%),
+  radial-gradient(720px 520px at -10% 0%, #EAF3FF 0%, transparent 50%),
+  #F4F7FB; }
+#boot{background:radial-gradient(700px 460px at 50% 0%, #E8F0FC, #F4F7FB)}
+#login{background:radial-gradient(820px 540px at 50% -5%, #E6EEFB, #F4F7FB)}
+#login h1{color:var(--txt)}
+.pwbox input{background:#fff;box-shadow:var(--shadow)}
+.btn{background:var(--brand);box-shadow:0 8px 20px rgba(37,99,235,.26)}
+.btn.ghost{background:#fff;color:var(--txt);border:1px solid var(--line);box-shadow:none}
+.btn.danger{background:var(--red);box-shadow:0 8px 20px rgba(226,59,90,.24)}
+.topbar{background:linear-gradient(180deg,#F4F7FB 64%, transparent)}
+.topbar h2{color:var(--txt);letter-spacing:-.4px}
+.iconbtn{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow)}
+.hero{box-shadow:0 14px 34px rgba(37,99,235,.28)}
+.hero .when{background:rgba(255,255,255,.22)}
+.hero.empty{background:linear-gradient(135deg,#64748B,#475569)}
+.stat{background:#fff;box-shadow:var(--shadow)}
+.subcard{box-shadow:0 4px 16px rgba(15,23,42,.05)}
+.subcard.overdue{border-left-color:var(--red);background:linear-gradient(90deg,rgba(226,59,90,.07),var(--card) 42%)}
+.paybtn{background:var(--brand);color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.25)}
+.pill.green{background:rgba(15,157,107,.14);color:var(--green)}
+.pill.amber{background:rgba(217,135,11,.16);color:var(--amber)}
+.pill.red{background:rgba(226,59,90,.14);color:var(--red)}
+.pill.blue{background:rgba(37,99,235,.14);color:var(--brand)}
+.seg button.on{background:var(--brand);color:#fff}
+.emojigrid button.on{outline-color:var(--brand)}
+.uploadbtn{background:var(--brand);box-shadow:0 6px 16px rgba(37,99,235,.3)}
+.bigstat{background:#fff;box-shadow:var(--shadow)}
+.nav{background:rgba(255,255,255,.86);border-top:1px solid var(--line)}
+.nav .fab{background:var(--brand);box-shadow:0 10px 24px rgba(37,99,235,.4)}
+.nav button.on{color:var(--txt)}
+.nav button.on .ic{filter:drop-shadow(0 4px 10px rgba(37,99,235,.4))}
+.mbtn.ok{background:var(--green);color:#fff}
+.mbtn.ok.danger{background:var(--red)}
+.modal-ov{background:rgba(15,23,42,.32)}
+.switch.on{background:var(--green)}
+#toast{background:#0F1B33;color:#fff;border:none;box-shadow:0 12px 30px rgba(15,23,42,.25)}
 </style>
 </head>
 <body>
