@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<meta name="theme-color" content="#0B1E3B" />
+<meta name="theme-color" content="#F4F7FB" />
 <title>Mis Suscripciones</title>
 <link rel="icon" type="image/png" href="/icon.png" />
 <link rel="apple-touch-icon" href="/icon.png" />
@@ -307,56 +307,54 @@ textarea.input{resize:vertical;min-height:64px}
 }
 </style>
 <style id="theme-nueva-apariencia">
-/* ===== Nueva apariencia · Opción B "Fintech · Confianza" (solo estilos) ===== */
+/* ===== Nueva apariencia · Opción A "Claro & Aireado" (solo estilos) ===== */
 :root{
-  --bg:#FFFFFF; --bg2:#F2F5FA; --card:#FFFFFF; --card2:#F4F7FC;
-  --line:rgba(11,26,51,.10); --txt:#0B1A33; --muted:#5A6884; --muted2:#9098AE;
-  --brand:#0A6CFF; --brand2:#3B86FF; --accent:#0A6CFF;
-  --green:#089A6B; --amber:#E08600; --red:#E5384F;
-  --shadow:0 10px 30px rgba(11,26,51,.10);
-  --r:16px;
+  --bg:#F4F7FB; --bg2:#EDF1F8; --card:#FFFFFF; --card2:#F5F8FC;
+  --line:rgba(15,23,42,.09); --txt:#0F1B33; --muted:#5E6B85; --muted2:#9AA6BE;
+  --brand:#2563EB; --brand2:#3B82F6; --accent:#2563EB;
+  --green:#0F9D6B; --amber:#D9870B; --red:#E23B5A;
+  --shadow:0 8px 24px rgba(15,23,42,.08);
+  --r:18px;
 }
-html{background:#fff}
+html{background:#F4F7FB}
 body{ color:var(--txt); background:
-  radial-gradient(920px 540px at 88% -12%, #EAF1FF 0%, transparent 55%),
-  #FFFFFF; }
-#boot{background:radial-gradient(700px 460px at 50% 0%, #0B1E3B, #08152B)}
-#login{background:linear-gradient(180deg,#0B1E3B 0%, #0A1A33 100%);color:#fff}
-#login h1{color:#fff} #login p{color:#AEBBD4}
-.pwbox input{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff}
-.btn{background:var(--brand);box-shadow:0 10px 24px rgba(10,108,255,.34)}
+  radial-gradient(900px 520px at 90% -12%, #E6EEFB 0%, transparent 55%),
+  radial-gradient(720px 520px at -10% 0%, #EAF3FF 0%, transparent 50%),
+  #F4F7FB; }
+#boot{background:radial-gradient(700px 460px at 50% 0%, #E8F0FC, #F4F7FB)}
+#login{background:radial-gradient(820px 540px at 50% -5%, #E6EEFB, #F4F7FB)}
+#login h1{color:var(--txt)}
+.pwbox input{background:#fff;box-shadow:var(--shadow)}
+.btn{background:var(--brand);box-shadow:0 8px 20px rgba(37,99,235,.26)}
 .btn.ghost{background:#fff;color:var(--txt);border:1px solid var(--line);box-shadow:none}
-.btn.danger{background:var(--red);box-shadow:0 10px 24px rgba(229,56,79,.26)}
-.topbar{background:linear-gradient(180deg,#fff 66%, transparent)}
+.btn.danger{background:var(--red);box-shadow:0 8px 20px rgba(226,59,90,.24)}
+.topbar{background:linear-gradient(180deg,#F4F7FB 64%, transparent)}
 .topbar h2{color:var(--txt);letter-spacing:-.4px}
 .iconbtn{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow)}
-.hero{box-shadow:0 18px 40px rgba(11,30,59,.38)}
-.hero .lbl{opacity:.78}
-.hero .when{background:rgba(255,255,255,.16)}
-.hero.empty{background:linear-gradient(135deg,#1E3A66,#0B1E3B)}
-.stat{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow)}
-.subcard{border:1px solid var(--line);box-shadow:0 6px 20px rgba(11,26,51,.06)}
-.subcard.overdue{border-left:3px solid var(--red);background:linear-gradient(90deg,rgba(229,56,79,.06),var(--card) 42%)}
-.paybtn{background:var(--brand);color:#fff;box-shadow:0 6px 14px rgba(10,108,255,.3)}
-.pill.green{background:rgba(8,154,107,.14);color:var(--green)}
-.pill.amber{background:rgba(224,134,0,.16);color:var(--amber)}
-.pill.red{background:rgba(229,56,79,.14);color:var(--red)}
-.pill.blue{background:rgba(10,108,255,.14);color:var(--brand)}
+.hero{box-shadow:0 14px 34px rgba(37,99,235,.28)}
+.hero .when{background:rgba(255,255,255,.22)}
+.hero.empty{background:linear-gradient(135deg,#64748B,#475569)}
+.stat{background:#fff;box-shadow:var(--shadow)}
+.subcard{box-shadow:0 4px 16px rgba(15,23,42,.05)}
+.subcard.overdue{border-left-color:var(--red);background:linear-gradient(90deg,rgba(226,59,90,.07),var(--card) 42%)}
+.paybtn{background:var(--brand);color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.25)}
+.pill.green{background:rgba(15,157,107,.14);color:var(--green)}
+.pill.amber{background:rgba(217,135,11,.16);color:var(--amber)}
+.pill.red{background:rgba(226,59,90,.14);color:var(--red)}
+.pill.blue{background:rgba(37,99,235,.14);color:var(--brand)}
 .seg button.on{background:var(--brand);color:#fff}
 .emojigrid button.on{outline-color:var(--brand)}
-.uploadbtn{background:var(--brand);box-shadow:0 6px 16px rgba(10,108,255,.32)}
-.bigstat{background:linear-gradient(160deg,#0B1E3B,#12376E);color:#fff;border:none;box-shadow:0 16px 34px rgba(11,30,59,.32)}
-.bigstat .k{color:#AEBBD4}
-.bigstat .v small{color:#AEBBD4}
-.nav{background:rgba(255,255,255,.9);border-top:1px solid var(--line)}
-.nav .fab{background:var(--brand);box-shadow:0 12px 26px rgba(10,108,255,.45)}
-.nav button.on{color:var(--brand)}
-.nav button.on .ic{filter:drop-shadow(0 4px 10px rgba(10,108,255,.45))}
+.uploadbtn{background:var(--brand);box-shadow:0 6px 16px rgba(37,99,235,.3)}
+.bigstat{background:#fff;box-shadow:var(--shadow)}
+.nav{background:rgba(255,255,255,.86);border-top:1px solid var(--line)}
+.nav .fab{background:var(--brand);box-shadow:0 10px 24px rgba(37,99,235,.4)}
+.nav button.on{color:var(--txt)}
+.nav button.on .ic{filter:drop-shadow(0 4px 10px rgba(37,99,235,.4))}
 .mbtn.ok{background:var(--green);color:#fff}
 .mbtn.ok.danger{background:var(--red)}
-.modal-ov{background:rgba(11,26,51,.4)}
+.modal-ov{background:rgba(15,23,42,.32)}
 .switch.on{background:var(--green)}
-#toast{background:#0B1A33;color:#fff;border:none;box-shadow:0 12px 30px rgba(11,26,51,.3)}
+#toast{background:#0F1B33;color:#fff;border:none;box-shadow:0 12px 30px rgba(15,23,42,.25)}
 </style>
 </head>
 <body>
@@ -368,10 +366,12 @@ body{ color:var(--txt); background:
 <div id="login" class="hidden">
   <img class="logo" src="/icon.png" alt="" />
   <h1>Mis Suscripciones</h1>
-  <p>Ingresa tu contraseña para continuar</p>
-  <div class="pwbox">
-    <input id="pw" type="password" inputmode="numeric" placeholder="• • • •" autocomplete="current-password" />
-    <button class="btn" onclick="doLogin()">Entrar</button>
+  <p id="loginSub">Inicia sesión</p>
+  <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px;margin-top:6px">
+    <input id="luser" class="input" placeholder="Usuario" autocomplete="username" autocapitalize="none" spellcheck="false" />
+    <input id="lpass" class="input" type="password" placeholder="Contraseña" autocomplete="current-password" />
+    <input id="lkey" class="input hidden" type="password" placeholder="Clave maestra" autocomplete="off" />
+    <button class="btn" id="loginBtn" onclick="doLogin()">Entrar</button>
   </div>
   <div class="err" id="loginErr"></div>
 </div>
@@ -476,34 +476,54 @@ async function api(path, opt={}){
     o.headers["Content-Type"]="application/json"; o.body=JSON.stringify(o.body);
   }
   const r=await fetch(API+path,o);
-  if(r.status===401){ logout(); throw new Error("Sesión expirada"); }
   const ct=r.headers.get("Content-Type")||"";
   const data=ct.includes("json")?await r.json():await r.text();
+  // 401 en rutas de sesión = expiró; en login/setup/status es solo error de credenciales
+  if(r.status===401 && !/\/api\/(login|setup|status)$/.test(path)){ logout(); throw new Error("Sesión expirada"); }
   if(!r.ok) throw new Error((data&&data.error)||"Error");
   return data;
 }
 
 /* ============================== login ============================== */
+let ME=null, SETUP=false;
+function setLoginMode(setup){
+  SETUP=!!setup;
+  $("#loginSub").textContent = SETUP ? "Crea la primera cuenta (admin)" : "Inicia sesión";
+  $("#lkey").classList.toggle("hidden", !SETUP);
+  $("#loginBtn").textContent = SETUP ? "Crear cuenta" : "Entrar";
+}
+async function checkSetupMode(){
+  try{ const r=await fetch("/api/status"); const d=await r.json(); setLoginMode(!!d.needs_setup); }
+  catch(e){ setLoginMode(false); }
+}
+function showApp(){
+  $("#login").classList.add("hidden");
+  $("#app").classList.remove("hidden"); $("#nav").classList.remove("hidden");
+  go("queue");
+}
 async function doLogin(){
-  const pw=$("#pw").value;
+  const username=$("#luser").value.trim();
+  const password=$("#lpass").value;
   $("#loginErr").textContent="";
+  if(!username||!password){ $("#loginErr").textContent="Escribe usuario y contraseña."; return; }
   try{
-    const {token}=await api("/api/login",{method:"POST",body:{password:pw}});
-    TOKEN=token; localStorage.setItem("sub_token",token);
-    $("#login").classList.add("hidden");
-    $("#app").classList.remove("hidden"); $("#nav").classList.remove("hidden");
-    await load(); go("queue");
+    const res = SETUP
+      ? await api("/api/setup",{method:"POST",body:{username,password,setup_key:$("#lkey").value}})
+      : await api("/api/login",{method:"POST",body:{username,password}});
+    TOKEN=res.token; localStorage.setItem("sub_token",TOKEN);
+    await load(); showApp();
   }catch(e){ $("#loginErr").textContent=e.message; }
 }
 function logout(){
-  TOKEN=""; localStorage.removeItem("sub_token");
+  TOKEN=""; ME=null; localStorage.removeItem("sub_token");
   $("#app").classList.add("hidden"); $("#nav").classList.add("hidden");
   $("#login").classList.remove("hidden");
+  $("#lpass").value=""; $("#lkey").value="";
 }
-$("#pw").addEventListener("keydown",e=>{if(e.key==="Enter")doLogin()});
+["lpass","lkey","luser"].forEach(id=>{ const el=$("#"+id); if(el) el.addEventListener("keydown",e=>{if(e.key==="Enter")doLogin();}); });
 
 /* ============================== carga / formato ============================== */
-async function load(){ STATE=await api("/api/state"); }
+async function load(){ STATE=await api("/api/state"); ME=STATE.me||null; }
 function S(){ return STATE.settings; }
 function dispCur(){ return S().display_currency||"GTQ"; }
 function symbol(c){ return c==="USD"?"$":"Q"; }
@@ -521,13 +541,18 @@ function dueLabel(days){
   if(days<=5) return {txt:`En ${days} días`,cls:"amber"};
   return {txt:`En ${days} días`,cls:"green"};
 }
+function cleanDomain(v){
+  let d=String(v||"").trim().replace(/^https?:\/\//i,"").replace(/^www\./i,"");
+  return d.split("/")[0];
+}
+function faviconUrl(v){ return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(cleanDomain(v))}&sz=64`; }
 function avatarHtml(s){
   const transp = s.color==="transparent";
   const white = s.color==="#ffffff";
   const border = (transp||white) ? "border:1px solid var(--line)" : "";
-  if(s.icon_type==="logo"&&s.icon_value)
-    return `<div class="avatar" style="background:${transp?'transparent':s.color};${border}"><img src="/logo/${s.icon_value}" alt=""></div>`;
-  if(s.icon_type==="letter")
+  if(s.icon_type==="domain" && s.icon_value)
+    return `<div class="avatar" style="background:${transp?'transparent':'#fff'};border:1px solid var(--line)"><img src="${faviconUrl(s.icon_value)}" alt="" style="width:66%;height:66%;object-fit:contain"></div>`;
+  if(s.icon_type==="letter" || s.icon_type==="logo") // 'logo' es de la versión vieja (R2) → cae a inicial
     return `<div class="avatar" style="background:${transp?'var(--card2)':s.color};${border};color:${white?'#1a1a1a':'#fff'}">${(s.name||"?").charAt(0).toUpperCase()}</div>`;
   const tint = transp ? "var(--card2)" : (white ? "#ffffff22" : s.color+"22");
   const fg = transp ? "var(--txt)" : (white ? "#e8e8e8" : s.color);
@@ -817,10 +842,11 @@ function viewForm(){
   accCat.body.appendChild(catWrap);
   card.appendChild(accCat.sec);
 
-  // icono: tipo
+  // icono: tipo (Emoji / Inicial / Logo web por favicon del dominio)
   const iconSeg=h(`<div class="seg" style="margin-bottom:11px">
-    <button data-v="emoji">Emoji</button><button data-v="letter">Inicial</button><button data-v="logo">Logo</button></div>`);
+    <button data-v="emoji">Emoji</button><button data-v="letter">Inicial</button><button data-v="domain">Logo web</button></div>`);
   const iconArea=h(`<div></div>`);
+  const iconLabel=()=>f.icon_type==="emoji"?"Emoji":f.icon_type==="letter"?"Inicial":"Logo web";
   function renderIconArea(){
     iconArea.innerHTML="";
     iconSeg.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.v===f.icon_type));
@@ -832,45 +858,23 @@ function viewForm(){
     }else if(f.icon_type==="letter"){
       iconArea.appendChild(h(`<div style="font-size:12.5px;color:var(--muted)">Se usará la primera letra del nombre.</div>`));
     }else{
-      const box=h(`<div></div>`);
-      const renderLogo=()=>{
-        box.innerHTML="";
-        if(f.icon_value && f.icon_type==="logo"){
-          const bg = f.color==="transparent" ? "repeating-conic-gradient(#9aa3c7 0% 25%, #2a3460 0% 50%) 50% / 12px 12px" : f.color;
-          const card=h(`<div class="uploaded">
-            <div class="thumb" style="background:${bg}"><img src="/logo/${f.icon_value}" alt=""></div>
-            <div style="flex:1;min-width:0">
-              <div class="ok">✓ Logo cargado</div>
-              <div class="subt">Guardado en tu R2 · listo para usar</div>
-            </div>
-            <button class="linklike" type="button">Cambiar</button>
-          </div>`);
-          $("button",card).addEventListener("click",()=>{ f.icon_value=""; renderLogo(); refreshPreview(); });
-          box.appendChild(card);
-        }else{
-          const drop=h(`<div class="uploadbox">
-            <label class="uploadbtn">📤 Subir logo<input type="file" accept="image/*" hidden></label>
-            <div style="margin-top:11px;font-size:12px;color:var(--muted)">PNG, JPG o SVG · se guarda en tu R2</div>
-          </div>`);
-          $("input",drop).addEventListener("change",async(e)=>{
-            const file=e.target.files[0]; if(!file) return;
-            box.innerHTML=`<div class="uploadbox"><div class="uploading"><span class="spinner"></span> Subiendo logo...</div></div>`;
-            try{
-              const buf=await file.arrayBuffer();
-              const r=await api("/api/logo",{method:"POST",body:buf,headers:{"Content-Type":file.type}});
-              f.icon_value=r.key; renderLogo(); refreshPreview(); toast("¡Logo cargado! ✓");
-            }catch(err){ toast("Error al subir el logo"); renderLogo(); }
-          });
-          box.appendChild(drop);
-        }
-      };
-      renderLogo();
-      iconArea.appendChild(box);
+      const wrap=h(`<div style="display:flex;gap:11px;align-items:center">
+        <div class="avatar" style="width:46px;height:46px;background:#fff;border:1px solid var(--line);flex-shrink:0"><img src="${faviconUrl(f.icon_value||'')}" style="width:66%;height:66%;object-fit:contain" alt=""></div>
+        <input class="input" placeholder="netflix.com" value="${esc(f.icon_value||'')}" autocapitalize="none" spellcheck="false"></div>`);
+      const inp=$("input",wrap), prev=$("img",wrap);
+      inp.addEventListener("input",()=>{ f.icon_value=inp.value.trim(); prev.src=faviconUrl(f.icon_value); refreshPreview(); });
+      iconArea.appendChild(wrap);
+      iconArea.appendChild(h(`<div style="font-size:12px;color:var(--muted);margin-top:8px">Escribe el sitio del servicio (ej. <b>netflix.com</b>, <b>spotify.com</b>) y jala su logo solo. Si no tiene, usará la inicial.</div>`));
     }
   }
-  iconSeg.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{f.icon_type=b.dataset.v;if(b.dataset.v==="emoji"&&!EMOJIS.includes(f.icon_value))f.icon_value="💳";renderIconArea();refreshPreview();accIcon.sub.textContent=f.icon_type==="emoji"?"Emoji":f.icon_type==="letter"?"Inicial":"Logo";}));
+  iconSeg.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{
+    const v=b.dataset.v;
+    if(v==="emoji" && !EMOJIS.includes(f.icon_value)) f.icon_value="💳";
+    if(v==="domain" && EMOJIS.includes(f.icon_value)) f.icon_value="";
+    f.icon_type=v; renderIconArea(); refreshPreview(); accIcon.sub.textContent=iconLabel();
+  }));
   const accIcon=accordion("🖼️ Icono");
-  accIcon.sub.textContent=f.icon_type==="emoji"?"Emoji":f.icon_type==="letter"?"Inicial":"Logo";
+  accIcon.sub.textContent=iconLabel();
   accIcon.body.appendChild(iconSeg); accIcon.body.appendChild(iconArea); renderIconArea();
   card.appendChild(accIcon.sec);
 
@@ -1062,6 +1066,40 @@ function viewSettings(){
   cardC.appendChild(addCat);
   p.appendChild(cardC);
 
+  // gestión de usuarios (solo admin)
+  if(ME && ME.is_admin){
+    const cardU=h(`<div class="card"></div>`);
+    cardU.appendChild(h(`<div style="font-weight:700;margin-bottom:4px">👥 Usuarios</div>`));
+    cardU.appendChild(h(`<div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Cada usuario tiene sus propias suscripciones. Solo tú (admin) puedes crear o borrar cuentas.</div>`));
+    const ulist=h(`<div><div style="font-size:13px;color:var(--muted2)">Cargando...</div></div>`);
+    const renderUsers=async()=>{
+      try{
+        const {users}=await api("/api/users");
+        ulist.innerHTML="";
+        users.forEach(u=>{
+          const yo = u.id===ME.id;
+          const row=h(`<div class="catrow"><div class="left">${u.is_admin?'👑':'👤'} ${esc(u.username)}${yo?' <span style="color:var(--muted2);font-size:12px">(tú)</span>':''}</div><div style="display:flex;gap:6px"><button class="iconbtn" style="width:34px;height:34px;font-size:13px" title="Cambiar contraseña">🔑</button><button class="iconbtn" style="width:34px;height:34px;font-size:14px" title="Borrar">🗑️</button></div></div>`);
+          const [key,del]=row.querySelectorAll(".iconbtn");
+          key.addEventListener("click",async()=>{ const np=prompt(`Nueva contraseña para "${u.username}":`); if(np===null)return; if(np.length<4){toast("Mínimo 4 caracteres");return;} try{ await api(`/api/users/${u.id}`,{method:"PUT",body:{password:np}}); toast("Contraseña cambiada ✓"); }catch(e){ toast(e.message); } });
+          if(yo){ del.style.display="none"; }
+          else del.addEventListener("click",async()=>{ if(!(await confirmBox(`¿Borrar al usuario <b>${esc(u.username)}</b> y TODOS sus datos?`,"Borrar","🗑️",true)))return; try{ await api(`/api/users/${u.id}`,{method:"DELETE"}); toast("Usuario borrado"); renderUsers(); }catch(e){ toast(e.message); } });
+          ulist.appendChild(row);
+        });
+      }catch(e){ ulist.innerHTML=`<div style="font-size:13px;color:var(--red)">${esc(e.message)}</div>`; }
+    };
+    renderUsers();
+    cardU.appendChild(ulist);
+    const addU=h(`<button class="btn ghost" style="width:100%;margin-top:8px">＋ Nuevo usuario</button>`);
+    addU.addEventListener("click",async()=>{
+      const username=prompt("Nombre de usuario del nuevo:"); if(username===null)return; if(username.trim().length<3){toast("Usuario mínimo 3 caracteres");return;}
+      const password=prompt(`Contraseña para "${username.trim()}":`); if(password===null)return; if(password.length<4){toast("Contraseña mínimo 4 caracteres");return;}
+      try{ await api("/api/users",{method:"POST",body:{username:username.trim(),password}}); toast("Usuario creado ✓"); renderUsers(); }
+      catch(e){ toast(e.message); }
+    });
+    cardU.appendChild(addU);
+    p.appendChild(cardU);
+  }
+
   const save=h(`<button class="btn" style="width:100%;margin-bottom:10px">Guardar ajustes</button>`);
   save.addEventListener("click",async()=>{
     await api("/api/settings",{method:"PUT",body:{display_currency:s.display_currency,exchange_rate:s.exchange_rate,reminder_days:s.reminder_days,notify_channel:s.notify_channel,notify_phone:s.notify_phone,hero_theme:s.hero_theme}});
@@ -1082,7 +1120,7 @@ function viewSettings(){
   p.appendChild(test);
 
   p.appendChild(h(`<button class="btn ghost" style="width:100%" onclick="logout()">Cerrar sesión</button>`));
-  p.appendChild(h(`<div style="text-align:center;color:var(--muted2);font-size:12px;margin-top:18px">Datos en Cloudflare D1 · Logos en R2</div>`));
+  p.appendChild(h(`<div style="text-align:center;color:var(--muted2);font-size:12px;margin-top:18px">Datos en Cloudflare D1 · ${ME?esc(ME.username):''}</div>`));
   return p;
 }
 
@@ -1099,19 +1137,26 @@ function accordion(title, opened){
 /* ============================== init ============================== */
 (async function(){
   const boot=$("#boot");
-  if(TOKEN){
-    try{
+  try{
+    if(TOKEN){
       await load();
-      $("#app").classList.remove("hidden"); $("#nav").classList.remove("hidden"); go("queue");
-    }catch(e){
-      TOKEN=""; localStorage.removeItem("sub_token");
+      showApp();
+    }else{
+      await checkSetupMode();
       $("#login").classList.remove("hidden");
     }
-  }else{
+  }catch(e){
+    TOKEN=""; localStorage.removeItem("sub_token");
+    await checkSetupMode();
     $("#login").classList.remove("hidden");
   }
   if(boot) boot.classList.add("hidden");
 })();
+
+// Registrar el service worker (hace la app instalable)
+if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>navigator.serviceWorker.register("/service-worker.js").catch(()=>{}));
+}
 </script>
 </body>
 </html>
