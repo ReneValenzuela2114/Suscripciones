@@ -407,6 +407,9 @@ body{ color:var(--txt); background:
 const API = "";
 let TOKEN = localStorage.getItem("sub_token") || "";
 let STATE = null;
+// Avisos por WhatsApp/SMS (Twilio, de pago). En false quedan ocultos y solo
+// funcionan los avisos dentro de la app. Poner en true para reactivarlos.
+const NOTIF_EXTERNAL = false;
 let TAB = "queue";
 let EDIT_ID = null;
 // Filtro independiente por pestaña (queue / all), guardado entre sesiones
@@ -969,7 +972,7 @@ function viewForm(){
   const renderNotify=()=>{
     notifyWrap.innerHTML="";
     const on=f.notify!==0;
-    const sw=h(`<div class="switchrow"><div><div class="lbl2">🔔 Avisarme de este pago</div><div class="hint">Recordatorio por WhatsApp antes del cobro</div></div><div class="switch ${on?'on':''}"><div class="knob"></div></div></div>`);
+    const sw=h(`<div class="switchrow"><div><div class="lbl2">🔔 Avisarme de este pago</div><div class="hint">Recibe un aviso en la app antes del cobro</div></div><div class="switch ${on?'on':''}"><div class="knob"></div></div></div>`);
     $(".switch",sw).addEventListener("click",()=>{ f.notify=on?0:1; renderNotify(); });
     notifyWrap.appendChild(sw);
     if(on){
@@ -1052,12 +1055,17 @@ function viewSettings(){
 
   const card2=h(`<div class="card"></div>`);
   card2.appendChild(h(`<div style="font-weight:700;margin-bottom:4px">🔔 Recordatorios</div>`));
-  card2.appendChild(h(`<div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Elige cómo recibir los avisos. El banner dentro de la app siempre funciona; el SMS requiere configurar Twilio (ver instrucciones).</div>`));
-  const chSeg=h(`<div class="seg" style="margin-bottom:14px"><button data-v="app">📱 App</button><button data-v="whatsapp">🟢 WhatsApp</button><button data-v="sms">✉️ SMS</button></div>`);
-  chSeg.querySelectorAll("button").forEach(b=>{b.classList.toggle("on",b.dataset.v===(s.notify_channel||"app"));
-    b.addEventListener("click",()=>{chSeg.querySelectorAll("button").forEach(x=>x.classList.remove("on"));b.classList.add("on");s.notify_channel=b.dataset.v;});});
-  card2.appendChild(chSeg);
-  card2.appendChild(field("Mi número (con código país, ej. +1...)","",()=>{const i=h(`<input class="input" type="tel" placeholder="+1 510 555 1234" value="${s.notify_phone||''}">`);i.addEventListener("input",()=>s.notify_phone=i.value);return i;}));
+  if(NOTIF_EXTERNAL){
+    card2.appendChild(h(`<div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Elige cómo recibir los avisos. El banner dentro de la app siempre funciona; el SMS requiere configurar Twilio (ver instrucciones).</div>`));
+    const chSeg=h(`<div class="seg" style="margin-bottom:14px"><button data-v="app">📱 App</button><button data-v="whatsapp">🟢 WhatsApp</button><button data-v="sms">✉️ SMS</button></div>`);
+    chSeg.querySelectorAll("button").forEach(b=>{b.classList.toggle("on",b.dataset.v===(s.notify_channel||"app"));
+      b.addEventListener("click",()=>{chSeg.querySelectorAll("button").forEach(x=>x.classList.remove("on"));b.classList.add("on");s.notify_channel=b.dataset.v;});});
+    card2.appendChild(chSeg);
+    card2.appendChild(field("Mi número (con código país, ej. +1...)","",()=>{const i=h(`<input class="input" type="tel" placeholder="+1 510 555 1234" value="${s.notify_phone||''}">`);i.addEventListener("input",()=>s.notify_phone=i.value);return i;}));
+  }else{
+    s.notify_channel="app"; // canales externos ocultos: solo avisos dentro de la app
+    card2.appendChild(h(`<div style="font-size:12.5px;color:var(--muted)">Te avisamos con un banner dentro de la app cuando se acerque la fecha de un pago.</div>`));
+  }
   p.appendChild(card2);
 
   // gestión de categorías
@@ -1126,17 +1134,19 @@ function viewSettings(){
   });
   p.appendChild(save);
 
-  const test=h(`<button class="btn ghost" style="width:100%;margin-bottom:10px">📨 Enviar aviso de prueba</button>`);
-  test.addEventListener("click",async()=>{
-    test.textContent="Enviando..."; test.disabled=true;
-    try{
-      await api("/api/settings",{method:"PUT",body:{display_currency:s.display_currency,exchange_rate:s.exchange_rate,reminder_days:s.reminder_days,notify_channel:s.notify_channel,notify_phone:s.notify_phone,hero_theme:s.hero_theme}});
-      const r=await api("/api/test-notify",{method:"POST"});
-      toast("¡Enviado! Revisa tu WhatsApp 🟢");
-    }catch(e){ toast(e.message); }
-    test.textContent="📨 Enviar aviso de prueba"; test.disabled=false;
-  });
-  p.appendChild(test);
+  if(NOTIF_EXTERNAL){
+    const test=h(`<button class="btn ghost" style="width:100%;margin-bottom:10px">📨 Enviar aviso de prueba</button>`);
+    test.addEventListener("click",async()=>{
+      test.textContent="Enviando..."; test.disabled=true;
+      try{
+        await api("/api/settings",{method:"PUT",body:{display_currency:s.display_currency,exchange_rate:s.exchange_rate,reminder_days:s.reminder_days,notify_channel:s.notify_channel,notify_phone:s.notify_phone,hero_theme:s.hero_theme}});
+        const r=await api("/api/test-notify",{method:"POST"});
+        toast("¡Enviado! Revisa tu WhatsApp 🟢");
+      }catch(e){ toast(e.message); }
+      test.textContent="📨 Enviar aviso de prueba"; test.disabled=false;
+    });
+    p.appendChild(test);
+  }
 
   p.appendChild(h(`<button class="btn ghost" style="width:100%" onclick="logout()">Cerrar sesión</button>`));
   p.appendChild(h(`<div style="text-align:center;color:var(--muted2);font-size:12px;margin-top:18px">Datos en Cloudflare D1 · ${ME?esc(ME.username):''}</div>`));
