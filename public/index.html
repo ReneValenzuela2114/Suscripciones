@@ -51,6 +51,8 @@ input,select,textarea{font-family:inherit;font-size:16px}
 #login .logo{width:96px;height:96px;border-radius:22px;filter:drop-shadow(0 10px 24px rgba(0,0,0,.5))}
 #login h1{margin:0;font-size:24px;font-weight:800;letter-spacing:-.5px}
 #login p{margin:0;color:var(--muted);font-size:14px}
+.linkbtn{background:none;border:none;color:var(--muted);font-size:13.5px;font-weight:600;cursor:pointer;padding:6px 4px;margin-top:-4px;text-decoration:underline;text-underline-offset:3px;transition:color .15s ease}
+.linkbtn:hover{color:var(--txt)}
 .pwbox{display:flex;gap:10px;width:100%;max-width:340px;margin-top:8px}
 .pwbox input{
   flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;
@@ -374,6 +376,7 @@ body{ color:var(--txt); background:
     <button class="btn" id="loginBtn" onclick="doLogin()">Entrar</button>
   </div>
   <div class="err" id="loginErr"></div>
+  <button id="authToggle" class="linkbtn hidden" onclick="toggleAuthMode()">¿No tienes cuenta? Crea una</button>
 </div>
 
 <!-- APP -->
@@ -485,16 +488,30 @@ async function api(path, opt={}){
 }
 
 /* ============================== login ============================== */
-let ME=null, SETUP=false;
-function setLoginMode(setup){
-  SETUP=!!setup;
-  $("#loginSub").textContent = SETUP ? "Crea la primera cuenta (admin)" : "Inicia sesión";
-  $("#lkey").classList.toggle("hidden", !SETUP);
-  $("#loginBtn").textContent = SETUP ? "Crear cuenta" : "Entrar";
+let ME=null, AUTH_MODE="login"; // 'login' | 'register' | 'setup'
+function applyAuthMode(){
+  const m=AUTH_MODE;
+  $("#loginSub").textContent = m==="setup" ? "Crea la primera cuenta (admin)"
+    : m==="register" ? "Crea tu cuenta" : "Inicia sesión";
+  $("#lkey").classList.toggle("hidden", m!=="setup");
+  $("#lpass").setAttribute("autocomplete", m==="login" ? "current-password" : "new-password");
+  $("#loginBtn").textContent = m==="login" ? "Entrar" : "Crear cuenta";
+  const t=$("#authToggle");
+  if(m==="setup"){ t.classList.add("hidden"); }
+  else{
+    t.classList.remove("hidden");
+    t.textContent = m==="register" ? "¿Ya tienes cuenta? Inicia sesión" : "¿No tienes cuenta? Crea una";
+  }
+  $("#loginErr").textContent="";
+}
+function toggleAuthMode(){
+  AUTH_MODE = AUTH_MODE==="register" ? "login" : "register";
+  applyAuthMode();
 }
 async function checkSetupMode(){
-  try{ const r=await fetch("/api/status"); const d=await r.json(); setLoginMode(!!d.needs_setup); }
-  catch(e){ setLoginMode(false); }
+  try{ const r=await fetch("/api/status"); const d=await r.json(); AUTH_MODE = d.needs_setup ? "setup" : "login"; }
+  catch(e){ AUTH_MODE="login"; }
+  applyAuthMode();
 }
 function showApp(){
   $("#login").classList.add("hidden");
@@ -507,9 +524,10 @@ async function doLogin(){
   $("#loginErr").textContent="";
   if(!username||!password){ $("#loginErr").textContent="Escribe usuario y contraseña."; return; }
   try{
-    const res = SETUP
-      ? await api("/api/setup",{method:"POST",body:{username,password,setup_key:$("#lkey").value}})
-      : await api("/api/login",{method:"POST",body:{username,password}});
+    let res;
+    if(AUTH_MODE==="setup") res=await api("/api/setup",{method:"POST",body:{username,password,setup_key:$("#lkey").value}});
+    else if(AUTH_MODE==="register") res=await api("/api/register",{method:"POST",body:{username,password}});
+    else res=await api("/api/login",{method:"POST",body:{username,password}});
     TOKEN=res.token; localStorage.setItem("sub_token",TOKEN);
     await load(); showApp();
   }catch(e){ $("#loginErr").textContent=e.message; }
@@ -519,6 +537,7 @@ function logout(){
   $("#app").classList.add("hidden"); $("#nav").classList.add("hidden");
   $("#login").classList.remove("hidden");
   $("#lpass").value=""; $("#lkey").value="";
+  AUTH_MODE="login"; applyAuthMode();
 }
 ["lpass","lkey","luser"].forEach(id=>{ const el=$("#"+id); if(el) el.addEventListener("keydown",e=>{if(e.key==="Enter")doLogin();}); });
 
