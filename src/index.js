@@ -256,6 +256,25 @@ async function handleAuth(request, env, path, method) {
     return json({ token: await makeToken(env, u.id), me: { id: u.id, username: u.username, is_admin: u.is_admin } });
   }
 
+  // Registro abierto: cualquiera que abra la app puede crear su propia cuenta. (público)
+  // La cuenta es normal (no admin) y arranca vacía: sus datos viven aislados por user_id,
+  // así que nunca ve ni modifica los de otra persona.
+  if (path === "/api/register" && method === "POST") {
+    const { username, password } = await request.json().catch(() => ({}));
+    if (!username || username.trim().length < 3) return json({ error: "Usuario mínimo 3 caracteres." }, 400);
+    if (!password || password.length < 4) return json({ error: "Contraseña mínimo 4 caracteres." }, 400);
+    const uname = username.trim();
+    const exists = await env.DB.prepare("SELECT id FROM users WHERE username=?").bind(uname).first();
+    if (exists) return json({ error: "Ese usuario ya existe. Elige otro." }, 400);
+    const { hash, salt } = await hashPassword(password);
+    const res = await env.DB.prepare(
+      "INSERT INTO users (username, pass_hash, pass_salt, is_admin) VALUES (?,?,?,0)"
+    ).bind(uname, hash, salt).run();
+    const uid = res.meta.last_row_id;
+    await seedUserCategories(env, uid);
+    return json({ token: await makeToken(env, uid), me: { id: uid, username: uname, is_admin: 0 } });
+  }
+
   return null; // no era ruta de auth
 }
 
